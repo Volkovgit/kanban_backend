@@ -1,0 +1,23 @@
+/**
+ * TypeORM Entities Base Directory
+ *
+ * All TypeORM entities should be placed in this directory
+ * with the .entity.ts suffix for automatic loading.
+ *
+ * Entity structure:
+ * - user.entity.ts
+ * - project.entity.ts
+ * - task.entity.ts
+ * - task-label.entity.ts (junction table)
+ * - label.entity.ts
+ *
+ * Each entity should:
+ * - Use @Entity() decorator
+ * - Define @PrimaryColumn() for ID
+ * - Use @Column() for properties
+ * - Define @CreateDateColumn() and @UpdateDateColumn() for timestamps
+ * - Set up @ManyToOne() and @OneToMany() relationships
+ * - Export the entity class
+ */
+
+export {};

@@ -1,0 +1,9 @@
+# Database Migrations Directory
+#
+# Migration files will be generated here using TypeORM CLI
+#
+# To create a new migration:
+# npm run migration:generate -- -n MigrationName
+#
+# Migration naming convention: Timestamp-MigrationName.ts
+# Example: 1707521234567-CreateUsersTable.ts
