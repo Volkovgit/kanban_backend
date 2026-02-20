@@ -1,3 +1,10 @@
+# Docker Compose for Development (PostgreSQL only)
+# For full stack deployment with backend container, use docker-compose.prod.yml
+#
+# Usage:
+#   docker-compose up -d postgres    # Start PostgreSQL only
+#   docker-compose -f docker-compose.prod.yml up -d  # Start full stack
+
 services:
   postgres:
     image: postgres:15-alpine

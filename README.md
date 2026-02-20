@@ -139,6 +139,102 @@ The API will be available at `http://localhost:3000`
 
 **API Documentation**: http://localhost:3000/api-docs
 
+## Docker Deployment
+
+### Quick Start with Docker Compose
+
+Run the entire stack (backend + PostgreSQL) with Docker:
+
+```bash
+# Copy environment file
+cp .env.example .env
+
+# Edit .env and set your JWT_SECRET and JWT_REFRESH_SECRET
+# (minimum 32 characters each)
+
+# Start all services
+docker-compose -f docker-compose.prod.yml up -d
+
+# View logs
+docker-compose -f docker-compose.prod.yml logs -f backend
+
+# Stop services
+docker-compose -f docker-compose.prod.yml down
+```
+
+The API will be available at `http://localhost:3000`
+
+**API Documentation**: http://localhost:3000/api-docs
+
+### Docker Commands
+
+```bash
+# Build and start services
+docker-compose -f docker-compose.prod.yml up -d --build
+
+# View logs for all services
+docker-compose -f docker-compose.prod.yml logs -f
+
+# View logs for specific service
+docker-compose -f docker-compose.prod.yml logs -f backend
+
+# Restart services
+docker-compose -f docker-compose.prod.yml restart
+
+# Stop and remove containers (keeps volumes)
+docker-compose -f docker-compose.prod.yml down
+
+# Stop and remove everything including volumes
+docker-compose -f docker-compose.prod.yml down -v
+
+# Execute commands in running container
+docker-compose -f docker-compose.prod.yml exec backend sh
+```
+
+### Running Migrations in Docker
+
+```bash
+# Run migrations (after starting containers)
+docker-compose -f docker-compose.prod.yml exec backend npm run migration:run
+
+# Seed labels
+docker-compose -f docker-compose.prod.yml exec backend npm run seed:labels
+```
+
+### Docker Image Only
+
+Build and run just the backend container (requires external PostgreSQL):
+
+```bash
+# Build image
+docker build -t kanban-backend .
+
+# Run container
+docker run -d \
+  --name kanban-backend \
+  -p 3000:3000 \
+  -e DB_HOST=your-db-host \
+  -e DB_DATABASE=kanban_dev \
+  -e DB_USERNAME=postgres \
+  -e DB_PASSWORD=your-password \
+  -e JWT_SECRET=your-jwt-secret \
+  -e JWT_REFRESH_SECRET=your-refresh-secret \
+  -e CORS_ORIGIN=http://localhost:4200 \
+  kanban-backend
+```
+
+### Health Check
+
+The Docker container includes a health check that monitors the `/health` endpoint:
+
+```bash
+# Check container health status
+docker ps
+
+# View health check logs
+docker inspect kanban-backend --format='{{json .State.Health}}' | jq
+```
+
 ## Available Scripts
 
 ```bash
