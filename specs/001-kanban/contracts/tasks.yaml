@@ -1,0 +1,357 @@
+openapi: 3.0.0
+info:
+  title: Kanban Board API - Tasks
+  version: 1.0.0
+  description: Endpoints для управления задачами
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Development server
+
+paths:
+  /boards/{boardId}/tasks:
+    get:
+      tags: [Tasks]
+      summary: Получить задачи доски
+      description: Возвращает все задачи указанной доски
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID доски
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [createdAt, updatedAt, title, status, priority]
+            default: createdAt
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [ASC, DESC]
+            default: DESC
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [BACKLOG, TODO, IN_PROGRESS, REVIEW, DONE]
+          description: Фильтрация по статусу
+        - name: priority
+          in: query
+          schema:
+            type: string
+            enum: [LOW, MEDIUM, HIGH, CRITICAL]
+          description: Фильтрация по приоритету
+      responses:
+        '200':
+          description: Список задач
+          headers:
+            X-Total-Count:
+              schema:
+                type: integer
+            X-Page-Size:
+              schema:
+                type: integer
+            X-Current-Page:
+              schema:
+                type: integer
+            X-Total-Pages:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+        '401':
+          description: Не авторизован
+        '403':
+          description: Доска принадлежит другому пользователю
+        '404':
+          description: Доска не найдена
+        '429':
+          description: Превышен лимит задач (1000 на доску)
+
+    post:
+      tags: [Tasks]
+      summary: Создать задачу
+      description: Создаёт новую задачу в указанной доске
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                  example: Implement login feature
+                description:
+                  type: string
+                  maxLength: 5000
+                  nullable: true
+                  example: Create login form with validation
+                status:
+                  type: string
+                  enum: [BACKLOG, TODO, IN_PROGRESS, REVIEW, DONE]
+                  default: BACKLOG
+                  example: BACKLOG
+                priority:
+                  type: string
+                  enum: [LOW, MEDIUM, HIGH, CRITICAL]
+                  default: MEDIUM
+                  example: MEDIUM
+      responses:
+        '201':
+          description: Задача создана
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '400':
+          description: Ошибка валидации
+        '401':
+          description: Не авторизован
+        '403':
+          description: Доска принадлежит другому пользователю
+        '404':
+          description: Доска не найдена
+
+  /tasks/{id}:
+    get:
+      tags: [Tasks]
+      summary: Получить задачу по ID
+      description: Возвращает задачу если она принадлежит доске авторизованного пользователя
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Задача найдена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '401':
+          description: Не авторизован
+        '403':
+          description: Задача принадлежит другому пользователю
+        '404':
+          description: Задача не найдена
+
+    patch:
+      tags: [Tasks]
+      summary: Обновить задачу
+      description: Обновляет поля задачи. Статус может быть изменён на любой валидный (би-направленный workflow).
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                description:
+                  type: string
+                  maxLength: 5000
+                  nullable: true
+                status:
+                  type: string
+                  enum: [BACKLOG, TODO, IN_PROGRESS, REVIEW, DONE]
+                  description: Любой статус может быть установлен (би-направленный workflow)
+                priority:
+                  type: string
+                  enum: [LOW, MEDIUM, HIGH, CRITICAL]
+      responses:
+        '200':
+          description: Задача обновлена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '400':
+          description: Ошибка валидации (невалидный статус/приоритет)
+        '401':
+          description: Не авторизован
+        '403':
+          description: Задача принадлежит другому пользователю
+        '404':
+          description: Задача не найдена
+
+    delete:
+      tags: [Tasks]
+      summary: Удалить задачу
+      description: Удаляет задачу
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Задача удалена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '401':
+          description: Не авторизован
+        '403':
+          description: Задача принадлежит другому пользователю
+        '404':
+          description: Задача не найдена
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [BACKLOG, TODO, IN_PROGRESS, REVIEW, DONE]
+        priority:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        boardId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+
+    ValidationError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
