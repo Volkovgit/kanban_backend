@@ -181,6 +181,28 @@ export abstract class BaseRepository<T extends ObjectLiteral> {
   }
 
   /**
+   * Delete an entity by ID within a transaction
+   * Useful for cascade delete operations
+   * @throws AppError if entity not found
+   */
+  async deleteInTransaction(id: string): Promise<void> {
+    await this.repository.manager.transaction(async (transactionalEntityManager) => {
+      const entity = await this.findById(id);
+      await transactionalEntityManager.remove(entity);
+    });
+  }
+
+  /**
+   * Delete multiple entities by conditions within a transaction
+   * Useful for cascade delete operations
+   */
+  async deleteManyInTransaction(where: FindOptionsWhere<T>): Promise<void> {
+    await this.repository.manager.transaction(async (transactionalEntityManager) => {
+      await transactionalEntityManager.delete(this.entity, where);
+    });
+  }
+
+  /**
    * Delete entities by conditions
    */
   async deleteMany(where: FindOptionsWhere<T>): Promise<void> {

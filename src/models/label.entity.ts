@@ -3,6 +3,7 @@
  *
  * Represents a categorical tag for tasks within a project.
  * Labels are project-specific and can be system-defined or user-created.
+ * NOTE: Task labels relationship temporarily removed for MVP simplification.
  */
 
 import {
@@ -11,13 +12,11 @@ import {
   Column,
   CreateDateColumn,
   ManyToOne,
-  ManyToMany,
   JoinColumn,
   Index,
   Generated,
 } from 'typeorm';
 import { Project } from './project.entity';
-import { Task } from './task.entity';
 
 @Entity()
 @Index(['projectId'])
@@ -47,11 +46,8 @@ export class Label {
   @JoinColumn({ name: 'projectId' })
   project!: Project;
 
-  @ManyToMany(() => Task, (task) => task.labels)
-  tasks!: Task[];
-
   /**
-   * System-defined label constants (FR-018)
+   * System-defined label constants
    * These labels are automatically seeded when a project is created.
    */
   static readonly SYSTEM_LABELS = [
@@ -61,3 +57,5 @@ export class Label {
     { name: 'Question', color: '#FF9800' },
   ];
 }
+
+export default Label;

@@ -7,5 +7,6 @@
 
 export { User } from './user.entity';
 export { Project } from './project.entity';
-export { Task, TaskStatus } from './task.entity';
+export { Task } from './task.entity';
 export { Label } from './label.entity';
+export { Board } from './board.entity';

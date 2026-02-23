@@ -1,9 +1,9 @@
 /**
- * Project Entity
+ * Board Entity
  *
- * Represents a container for organizing related tasks.
- * Each project belongs to a specific user and contains labels.
- * NOTE: Tasks moved to Board entity for Kanban architecture.
+ * Represents a Kanban board that contains tasks.
+ * Each board belongs to exactly one user (owner).
+ * When a board is deleted, all its tasks are cascade deleted.
  */
 
 import {
@@ -12,27 +12,27 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
   OneToMany,
+  ManyToOne,
   JoinColumn,
-  Index,
   Generated,
+  Index,
 } from 'typeorm';
+import { Task } from './task.entity';
 import { User } from './user.entity';
-import { Label } from './label.entity';
 
 @Entity()
 @Index(['ownerId'])
-export class Project {
+export class Board {
   @PrimaryColumn('uuid')
   @Generated('uuid')
   id!: string;
 
   @Column({ length: 255 })
-  name!: string;
+  title!: string;
 
   @Column({ type: 'text', nullable: true })
-  description!: string;
+  description!: string | null;
 
   @Column()
   ownerId!: string;
@@ -44,12 +44,13 @@ export class Project {
   updatedAt!: Date;
 
   // Relationships
-  @ManyToOne(() => User, (user) => user.projects, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.boards, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'ownerId' })
   owner!: User;
 
-  @OneToMany(() => Label, (label) => label.project)
-  labels!: Label[];
+  // Relationships - cascade delete tasks when board is deleted
+  @OneToMany(() => Task, (task) => task.board, { cascade: true })
+  tasks!: Task[];
 }
 
-export default Project;
+export default Board;

@@ -1,23 +1,9 @@
 /**
- * TaskStatus Enum
- *
- * Represents the workflow stage of a task.
- * Tasks can move forward or backward through the workflow.
- */
-
-export enum TaskStatus {
-  BACKLOG = 'Backlog',
-  TODO = 'To Do',
-  IN_PROGRESS = 'In Progress',
-  REVIEW = 'Review',
-  DONE = 'Done',
-}
-
-/**
  * Task Entity
  *
- * Represents a work item with title, description, due date, labels, and status.
- * Each task belongs to exactly one project and can have multiple labels.
+ * Represents a work item on a Kanban board.
+ * Each task belongs to exactly one board and has status/priority.
+ * Default status: BACKLOG, Default priority: MEDIUM.
  */
 
 import {
@@ -27,20 +13,19 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
-  ManyToMany,
   JoinColumn,
-  JoinTable,
   Index,
   Generated,
 } from 'typeorm';
-import { Project } from './project.entity';
-import { Label } from './label.entity';
+import { Board } from './board.entity';
+import { TaskStatus } from '../enums/task-status.enum';
+import { TaskPriority } from '../enums/task-priority.enum';
 
 @Entity()
-@Index(['projectId'])
+@Index(['boardId'])
 @Index(['status'])
-@Index(['dueDate'])
-@Index(['projectId', 'status'])
+@Index(['priority'])
+@Index(['boardId', 'status'])
 export class Task {
   @PrimaryColumn('uuid')
   @Generated('uuid')
@@ -50,7 +35,7 @@ export class Task {
   title!: string;
 
   @Column({ type: 'text', nullable: true })
-  description!: string;
+  description!: string | null;
 
   @Column({
     type: 'enum',
@@ -59,14 +44,15 @@ export class Task {
   })
   status!: TaskStatus;
 
-  @Column({ type: 'timestamp without time zone', nullable: true })
-  dueDate!: Date;
+  @Column({
+    type: 'enum',
+    enum: TaskPriority,
+    default: TaskPriority.MEDIUM,
+  })
+  priority!: TaskPriority;
 
   @Column()
-  projectId!: string;
-
-  @Column({ type: 'timestamp without time zone', nullable: true })
-  completedAt!: Date;
+  boardId!: string;
 
   @CreateDateColumn()
   createdAt!: Date;
@@ -75,21 +61,10 @@ export class Task {
   updatedAt!: Date;
 
   // Relationships
-  @ManyToOne(() => Project, (project) => project.tasks)
-  @JoinColumn({ name: 'projectId' })
-  project!: Project;
-
-  @ManyToMany(() => Label, (label) => label.tasks)
-  @JoinTable({
-    name: 'task_labels_label',
-    joinColumn: {
-      name: 'taskId',
-      referencedColumnName: 'id',
-    },
-    inverseJoinColumn: {
-      name: 'labelId',
-      referencedColumnName: 'id',
-    },
-  })
-  labels!: Label[];
+  @ManyToOne(() => Board, (board) => board.tasks, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'boardId' })
+  board!: Board;
 }
+
+export { TaskStatus, TaskPriority };
+export default Task;

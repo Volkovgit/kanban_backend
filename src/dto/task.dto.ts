@@ -5,8 +5,8 @@
  * Uses class-validator for input validation.
  */
 
-import { IsString, IsNotEmpty, MaxLength, IsOptional, IsEnum, IsArray, IsUUID, IsDateString, IsInt, Min } from 'class-validator';
-import { TaskStatus } from '../../../../libs/shared-types/src/models/task.interface';
+import { IsString, IsNotEmpty, MaxLength, IsOptional, IsEnum, IsUUID } from 'class-validator';
+import { TaskStatus, TaskPriority } from '../enums';
 
 /**
  * Create Task DTO
@@ -23,22 +23,17 @@ export class CreateTaskDto {
   @MaxLength(5000, { message: 'Task description must not exceed 5000 characters' })
   description?: string;
 
-  @IsEnum(TaskStatus, { message: 'Status must be one of: Backlog, To Do, In Progress, Review, Done' })
+  @IsEnum(TaskStatus, { message: 'Status must be one of: BACKLOG, TODO, IN_PROGRESS, REVIEW, DONE' })
   @IsOptional()
   status?: TaskStatus;
 
-  @IsDateString()
+  @IsEnum(TaskPriority, { message: 'Priority must be one of: LOW, MEDIUM, HIGH, CRITICAL' })
   @IsOptional()
-  dueDate?: string;
+  priority?: TaskPriority;
 
-  @IsUUID('4', { message: 'Project ID must be a valid UUID' })
-  @IsNotEmpty({ message: 'Project ID is required' })
-  projectId!: string;
-
-  @IsArray({ message: 'Label IDs must be an array' })
-  @IsUUID('4', { each: true, message: 'Each label ID must be a valid UUID' })
-  @IsOptional()
-  labelIds?: string[];
+  @IsUUID('4', { message: 'Board ID must be a valid UUID' })
+  @IsNotEmpty({ message: 'Board ID is required' })
+  boardId!: string;
 }
 
 /**
@@ -58,18 +53,13 @@ export class UpdateTaskDto {
   @MaxLength(5000, { message: 'Task description must not exceed 5000 characters' })
   description?: string;
 
-  @IsEnum(TaskStatus, { message: 'Status must be one of: Backlog, To Do, In Progress, Review, Done' })
+  @IsEnum(TaskStatus, { message: 'Status must be one of: BACKLOG, TODO, IN_PROGRESS, REVIEW, DONE' })
   @IsOptional()
   status?: TaskStatus;
 
-  @IsDateString()
+  @IsEnum(TaskPriority, { message: 'Priority must be one of: LOW, MEDIUM, HIGH, CRITICAL' })
   @IsOptional()
-  dueDate?: string;
-
-  @IsArray({ message: 'Label IDs must be an array' })
-  @IsUUID('4', { each: true, message: 'Each label ID must be a valid UUID' })
-  @IsOptional()
-  labelIds?: string[];
+  priority?: TaskPriority;
 }
 
 /**
@@ -81,21 +71,10 @@ export interface TaskResponseDto {
   title: string;
   description: string | null;
   status: TaskStatus;
-  dueDate: Date | null;
-  projectId: string;
-  completedAt: Date | null;
+  priority: TaskPriority;
+  boardId: string;
   createdAt: Date;
   updatedAt: Date;
-  labels?: LabelResponseDto[];
-}
-
-/**
- * Label Response DTO (minimal for task responses)
- */
-export interface LabelResponseDto {
-  id: string;
-  name: string;
-  color: string;
 }
 
 /**
@@ -105,10 +84,12 @@ export interface LabelResponseDto {
 export interface TaskListResponseDto {
   success: true;
   data: TaskResponseDto[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+  };
 }
 
 /**
@@ -126,22 +107,21 @@ export interface TaskDetailResponseDto {
  */
 export class TaskQueryDto {
   @IsOptional()
-  @IsString({ message: 'Project ID must be a string' })
-  projectId?: string;
+  @IsString({ message: 'Board ID must be a string' })
+  boardId?: string;
 
   @IsOptional()
   @IsEnum(TaskStatus, { message: 'Status filter must be valid' })
   status?: TaskStatus;
 
   @IsOptional()
-  @IsInt({ message: 'Page must be an integer' })
-  @Min(1, { message: 'Page must be at least 1' })
+  @IsEnum(TaskPriority, { message: 'Priority filter must be valid' })
+  priority?: TaskPriority;
+
+  @IsOptional()
   page?: number;
 
   @IsOptional()
-  @IsInt({ message: 'Page size must be an integer' })
-  @Min(1, { message: 'Page size must be at least 1' })
-  @Min(100, { message: 'Page size must not exceed 100' })
   pageSize?: number;
 }
 

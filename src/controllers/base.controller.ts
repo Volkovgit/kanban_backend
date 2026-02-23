@@ -165,6 +165,20 @@ export abstract class BaseController {
       throw new AppError(400, `Invalid ${fieldName} format`, 'ValidationError');
     }
   }
+
+  /**
+   * Set rate limit headers in response
+   * Used when custom rate limiting is applied
+   */
+  protected setRateLimitHeaders(
+    res: Response,
+    remaining: number,
+    reset: Date
+  ): void {
+    res.setHeader('X-RateLimit-Limit', '100'); // Default API limit
+    res.setHeader('X-RateLimit-Remaining', remaining.toString());
+    res.setHeader('X-RateLimit-Reset', reset.getTime().toString());
+  }
 }
 
 export default BaseController;

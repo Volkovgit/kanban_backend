@@ -7,7 +7,7 @@
 
 import { FindOptionsWhere, DataSource } from 'typeorm';
 import { Task } from '../models/task.entity';
-import { TaskStatus } from '../../../../libs/shared-types/src/models/task.interface';
+import { TaskStatus, TaskPriority } from '../enums';
 import { BaseRepository, PaginationResult } from './base.repository';
 
 export class TaskRepository extends BaseRepository<Task> {
@@ -16,17 +16,20 @@ export class TaskRepository extends BaseRepository<Task> {
   }
 
   /**
-   * Find all tasks for a specific project
+   * Find all tasks for a specific board
    */
-  async findByProjectId(
-    projectId: string,
-    options?: { status?: TaskStatus; page?: number; pageSize?: number }
+  async findByBoardId(
+    boardId: string,
+    options?: { status?: TaskStatus; priority?: TaskPriority; page?: number; pageSize?: number }
   ): Promise<PaginationResult<Task>> {
-    const { status, page, pageSize } = options || {};
+    const { status, priority, page, pageSize } = options || {};
 
-    const where: FindOptionsWhere<Task> = { projectId };
+    const where: FindOptionsWhere<Task> = { boardId };
     if (status) {
       where.status = status;
+    }
+    if (priority) {
+      where.priority = priority;
     }
 
     if (page && pageSize) {
@@ -47,19 +50,18 @@ export class TaskRepository extends BaseRepository<Task> {
    * Find tasks by status
    */
   async findByStatus(
-    projectId: string,
+    boardId: string,
     status: TaskStatus
   ): Promise<Task[]> {
-    return this.findMany({ projectId, status });
+    return this.findMany({ boardId, status });
   }
 
   /**
-   * Find tasks for board view (exclude completed/archived tasks)
+   * Find tasks for board view (exclude completed tasks)
    */
-  async findForBoard(projectId: string): Promise<Task[]> {
+  async findForBoard(boardId: string): Promise<Task[]> {
     return this.getRepository().find({
-      where: { projectId, status: TaskStatus.DONE },
-      relations: ['labels'],
+      where: { boardId },
       order: { createdAt: 'ASC' },
     });
   }
@@ -70,9 +72,8 @@ export class TaskRepository extends BaseRepository<Task> {
   async search(query: string, userId: string): Promise<Task[]> {
     return this.getRepository()
       .createQueryBuilder('task')
-      .leftJoin('task.project', 'project')
-      .leftJoin('task.labels', 'labels')
-      .where('project.ownerId = :userId', { userId })
+      .leftJoin('task.board', 'board')
+      .where('board.ownerId = :userId', { userId })
       .andWhere(
         '(task.title ILIKE :query OR task.description ILIKE :query)',
         { query: `%${query}%` }
@@ -84,14 +85,16 @@ export class TaskRepository extends BaseRepository<Task> {
   /**
    * Find completed tasks
    */
-  async findCompleted(projectId: string): Promise<Task[]> {
-    return this.findMany({ projectId, status: TaskStatus.DONE });
+  async findCompleted(boardId: string): Promise<Task[]> {
+    return this.findMany({ boardId, status: TaskStatus.DONE });
   }
 
   /**
-   * Count tasks in a project
+   * Count tasks in a board
    */
-  async countByProjectId(projectId: string): Promise<number> {
-    return this.count({ projectId });
+  async countByBoardId(boardId: string): Promise<number> {
+    return this.count({ boardId });
   }
 }
+
+export default TaskRepository;

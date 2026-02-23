@@ -38,31 +38,31 @@
 
 ### Config & Utilities
 
-- [ ] T004 [P] Создать rate limiter конфигурацию в src/config/rate-limiter.ts (auth: 10 req/min, API: 100 req/min)
-- [ ] T005 [P] Обновить Winston logger в src/config/logger.ts для поддержки structured logging с correlation ID
+- [X] T004 [P] Создать rate limiter конфигурацию в src/config/rate-limiter.ts (auth: 10 req/min, API: 100 req/min)
+- [X] T005 [P] Обновить Winston logger в src/config/logger.ts для поддержки structured logging с correlation ID
 
 ### Base Entities
 
-- [ ] T006 [P] Создать Board entity в src/models/board.entity.ts с UUID v4, полями title, description, ownerId, createdAt, updatedAt
-- [ ] T007 [P] Обновить User entity в src/models/user.entity.ts с полями failedLoginAttempts, lockedUntil, refreshToken
-- [ ] T008 [P] Создать Task entity в src/models/task.entity.ts с enum TaskStatus/TaskPriority, полями title, description, status, priority, boardId, createdAt, updatedAt
-- [ ] T009 Зарегистрировать новые entities в TypeORM DataSource в src/config/data-source.ts
+- [X] T006 [P] Создать Board entity в src/models/board.entity.ts с UUID v4, полями title, description, ownerId, createdAt, updatedAt
+- [X] T007 [P] Обновить User entity в src/models/user.entity.ts с полями failedLoginAttempts, lockedUntil, refreshToken
+- [X] T008 [P] Создать Task entity в src/models/task.entity.ts с enum TaskStatus/TaskPriority, полями title, description, status, priority, boardId, createdAt, updatedAt
+- [X] T009 Зарегистрировать новые entities в TypeORM DataSource в src/config/data-source.ts
 
 ### Enums & Types
 
-- [ ] T010 [P] Создать enum TaskStatus в src/enums/task-status.enum.ts (BACKLOG, TODO, IN_PROGRESS, REVIEW, DONE)
-- [ ] T011 [P] Создать enum TaskPriority в src/enums/task-priority.enum.ts (LOW, MEDIUM, HIGH, CRITICAL)
+- [X] T010 [P] Создать enum TaskStatus в src/enums/task-status.enum.ts (BACKLOG, TODO, IN_PROGRESS, REVIEW, DONE)
+- [X] T011 [P] Создать enum TaskPriority в src/enums/task-priority.enum.ts (LOW, MEDIUM, HIGH, CRITICAL)
 
 ### Base Classes Update
 
-- [ ] T012 Обновить BaseController в src/controllers/base.controller.ts с методами для rate limit headers
-- [ ] T013 Обновить BaseRepository в src/repositories/base.repository.ts для поддержки cascade delete транзакций
+- [X] T012 Обновить BaseController в src/controllers/base.controller.ts с методами для rate limit headers
+- [X] T013 Обновить BaseRepository в src/repositories/base.repository.ts для поддержки cascade delete транзакций
 
 ### Migrations
 
-- [ ] T014 Сгенерировать миграцию для User entity изменений (failedLoginAttempts, lockedUntil, refreshToken)
-- [ ] T015 Сгенерировать миграцию для Board entity
-- [ ] T016 Сгенерировать миграцию для Task entity с enums
+- [X] T014 Сгенерировать миграцию для User entity изменений (failedLoginAttempts, lockedUntil, refreshToken)
+- [X] T015 Сгенерировать миграцию для Board entity
+- [X] T016 Сгенерировать миграцию для Task entity с enums
 
 **Checkpoint**: Foundation ready - можно начинать реализацию user stories
 
