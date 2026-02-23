@@ -18,51 +18,170 @@ export class UserRepository extends BaseRepository<User> {
   }
 
   /**
-   * Find user by email
-   * @param email - User email address
-   * @returns User or null if not found
+   * T031: Найти пользователя по логину
+   * @param login - Логин пользователя
+   * @returns User или null если не найден
    */
-  async findByEmail(email: string): Promise<User | null> {
+  async findByLogin(login: string): Promise<User | null> {
     return this.repository.findOne({
-      where: { email } as FindOptionsWhere<User>,
-      cache: false, // Disable query cache for immediate consistency
+      where: { login } as FindOptionsWhere<User>,
+      cache: false, // Отключаем кеш для немедленной консистентности
     });
   }
 
   /**
-   * Find user by email or throw error
-   * @param email - User email address
+   * T031: Найти пользователя по логину или выбросить ошибку
+   * @param login - Логин пользователя
    * @returns User
-   * @throws Error if user not found
+   * @throws Error если пользователь не найден
    */
-  async findByEmailOrThrow(email: string): Promise<User> {
-    const user = await this.findByEmail(email);
+  async findByLoginOrThrow(login: string): Promise<User> {
+    const user = await this.findByLogin(login);
 
     if (!user) {
-      throw new Error('User not found');
+      throw new Error('Пользователь не найден');
     }
 
     return user;
   }
 
   /**
-   * Check if email is already registered
-   * @param email - Email to check
-   * @returns True if email exists, false otherwise
+   * T031: Проверить существует ли логин
+   * @param login - Логин для проверки
+   * @returns True если логин существует, иначе false
    */
-  async emailExists(email: string): Promise<boolean> {
-    return this.exists({ email } as FindOptionsWhere<User>);
+  async loginExists(login: string): Promise<boolean> {
+    return this.exists({ login } as FindOptionsWhere<User>);
   }
 
   /**
-   * Create a new user
-   * @param email - User email
-   * @param passwordHash - Bcrypt hash of password
-   * @returns Created user
+   * T031: Увеличить счётчик неудачных попыток входа
+   * @param userId - ID пользователя
+   * @returns Обновлённый пользователь
    */
-  async createWithPassword(email: string, passwordHash: string): Promise<User> {
+  async incrementFailedAttempts(userId: string): Promise<User> {
+    const user = await this.findById(userId);
+
+    if (!user) {
+      throw new Error('Пользователь не найден');
+    }
+
+    user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+
+    // Блокируем аккаунт после 5 неудачных попыток
+    if (user.failedLoginAttempts >= 5) {
+      const lockUntil = new Date();
+      lockUntil.setMinutes(lockUntil.getMinutes() + 15); // 15 минут
+      user.lockedUntil = lockUntil;
+    }
+
+    return this.repository.save(user);
+  }
+
+  /**
+   * T031: Заблокировать аккаунт
+   * @param userId - ID пользователя
+   * @param lockUntil - Дата разблокировки (null для разблокировки)
+   * @returns Обновлённый пользователь
+   */
+  async lockAccount(userId: string, lockUntil: Date): Promise<User> {
+    const user = await this.findById(userId);
+
+    if (!user) {
+      throw new Error('Пользователь не найден');
+    }
+
+    user.lockedUntil = lockUntil;
+    return this.repository.save(user);
+  }
+
+  /**
+   * T031: Сбросить счётчик неудачных попыток
+   * @param userId - ID пользователя
+   * @returns Обновлённый пользователь
+   */
+  async resetFailedAttempts(userId: string): Promise<User> {
+    const user = await this.findById(userId);
+
+    if (!user) {
+      throw new Error('Пользователь не найден');
+    }
+
+    user.failedLoginAttempts = 0;
+    user.lockedUntil = null;
+    return this.repository.save(user);
+  }
+
+  /**
+   * T031: Установить refresh токен
+   * @param userId - ID пользователя
+   * @param refreshToken - Refresh токен (хешированный)
+   * @returns Обновлённый пользователь
+   */
+  async setRefreshToken(userId: string, refreshToken: string): Promise<User> {
+    const user = await this.findById(userId);
+
+    if (!user) {
+      throw new Error('Пользователь не найден');
+    }
+
+    user.refreshToken = refreshToken;
+    return this.repository.save(user);
+  }
+
+  /**
+   * T031: Удалить refresh токен
+   * @param userId - ID пользователя
+   * @returns Обновлённый пользователь
+   */
+  async removeRefreshToken(userId: string): Promise<User> {
+    const user = await this.findById(userId);
+
+    if (!user) {
+      throw new Error('Пользователь не найден');
+    }
+
+    user.refreshToken = null;
+    return this.repository.save(user);
+  }
+
+  /**
+   * Найти пользователя по refresh токену
+   * @param refreshToken - Refresh токен
+   * @returns User или null если не найден
+   */
+  async findByRefreshToken(refreshToken: string): Promise<User | null> {
+    return this.repository.findOne({
+      where: { refreshToken } as FindOptionsWhere<User>,
+      cache: false,
+    });
+  }
+
+  // ========== Backward compatibility methods (для старого кода) ==========
+
+  /**
+   * Find user by email (deprecated, используйте findByLogin)
+   * @deprecated Используйте findByLogin вместо этого метода
+   */
+  async findByEmail(email: string): Promise<User | null> {
+    return this.findByLogin(email);
+  }
+
+  /**
+   * Check if email exists (deprecated, используйте loginExists)
+   * @deprecated Используйте loginExists вместо этого метода
+   */
+  async emailExists(email: string): Promise<boolean> {
+    return this.loginExists(email);
+  }
+
+  /**
+   * Create user with password (deprecated)
+   * @deprecated Используйте UserService.create вместо этого метода
+   */
+  async createWithPassword(login: string, passwordHash: string): Promise<User> {
     return this.create({
-      email,
+      login,
       passwordHash,
     });
   }

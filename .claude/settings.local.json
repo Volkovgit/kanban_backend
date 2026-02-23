@@ -5,7 +5,11 @@
       "Bash(npm install:*)",
       "Bash(npx ts-node:*)",
       "Bash(node --loader ts-node/esm -r tsconfig-paths/register:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(.specify/scripts/bash/setup-plan.sh:*)",
+      "Bash(.specify/scripts/bash/update-agent-context.sh claude:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

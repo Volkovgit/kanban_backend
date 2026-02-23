@@ -14,7 +14,7 @@ import { ProjectService } from '../services/project.service';
 import { CreateProjectDto, UpdateProjectDto } from '../dto/project.dto';
 import { validateDto } from '../config/validation';
 import { wrapAsync } from '../middleware/error-handler';
-import { authenticate } from '../middleware/auth.middleware';
+import { createAuthenticateMiddleware } from '../middleware/authenticate';
 import { BaseController } from './base.controller';
 
 /**
@@ -24,10 +24,12 @@ import { BaseController } from './base.controller';
 export class ProjectController extends BaseController {
   private router = Router();
   private projectService: ProjectService;
+  private dataSource: any;
 
-  constructor(projectService: ProjectService) {
+  constructor(projectService: ProjectService, dataSource: any) {
     super();
     this.projectService = projectService;
+    this.dataSource = dataSource;
     this.setupRoutes();
   }
 
@@ -41,7 +43,7 @@ export class ProjectController extends BaseController {
      */
     this.router.get(
       '/',
-      authenticate,
+      createAuthenticateMiddleware(this.dataSource),
       wrapAsync(async (req: Request, res: Response) => {
         const userId = this.getUserId(req);
         const pagination = this.getPaginationParams(req);
@@ -52,13 +54,23 @@ export class ProjectController extends BaseController {
         });
 
         // Use paginated response from BaseController
-        return this.paginated(
-          res,
+        const paginatedResult = this.paginated(
           result.data,
           result.page,
           result.pageSize,
           result.total
         );
+
+        // Add pagination headers
+        res.setHeader('X-Total-Count', result.total.toString());
+        res.setHeader('X-Page-Size', result.pageSize.toString());
+        res.setHeader('X-Current-Page', result.page.toString());
+        res.setHeader('X-Total-Pages', Math.ceil(result.total / result.pageSize).toString());
+
+        return res.status(200).json({
+          success: true,
+          ...paginatedResult
+        });
       })
     );
 
@@ -69,7 +81,7 @@ export class ProjectController extends BaseController {
      */
     this.router.get(
       '/:id',
-      authenticate,
+      createAuthenticateMiddleware(this.dataSource),
       wrapAsync(async (req: Request, res: Response) => {
         const { id } = req.params;
         const userId = this.getUserId(req);
@@ -89,7 +101,7 @@ export class ProjectController extends BaseController {
      */
     this.router.post(
       '/',
-      authenticate,
+      createAuthenticateMiddleware(this.dataSource),
       validateDto(CreateProjectDto),
       wrapAsync(async (req: Request, res: Response) => {
         const createProjectDto: CreateProjectDto = req.body;
@@ -112,7 +124,7 @@ export class ProjectController extends BaseController {
      */
     this.router.patch(
       '/:id',
-      authenticate,
+      createAuthenticateMiddleware(this.dataSource),
       validateDto(UpdateProjectDto),
       wrapAsync(async (req: Request, res: Response) => {
         const { id } = req.params;
@@ -139,7 +151,7 @@ export class ProjectController extends BaseController {
      */
     this.router.delete(
       '/:id',
-      authenticate,
+      createAuthenticateMiddleware(this.dataSource),
       wrapAsync(async (req: Request, res: Response) => {
         const { id } = req.params;
         const userId = this.getUserId(req);

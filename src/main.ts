@@ -9,17 +9,19 @@ import { jsonErrorHandler } from './middleware/json-error.middleware';
 import { requestLogger } from './middleware/logger';
 import { UserRepository } from './repositories/user.repository';
 import { ProjectRepository } from './repositories/project.repository';
+// import { BoardRepository } from './repositories/board.repository';
 import { UserService } from './services/user.service';
 import { AuthService } from './services/auth.service';
 import { ProjectService } from './services/project.service';
-import { TaskService } from './services/task.service';
-import { LabelService } from './services/label.service';
+// import { TaskService } from './services/task.service';
+// import { LabelService } from './services/label.service';
 import { AuthController } from './controllers/auth.controller';
 import { ProjectController } from './controllers/project.controller';
-import { TaskController } from './controllers/task.controller';
-import { LabelController } from './controllers/label.controller';
-import { TaskRepository } from './repositories/task.repository';
-import { LabelRepository } from './repositories/label.repository';
+// import { TaskController } from './controllers/task.controller';
+// import { LabelController } from './controllers/label.controller';
+// import { TaskRepository } from './repositories/task.repository';
+// import { LabelRepository } from './repositories/label.repository';
+import { JwtService } from '@nestjs/jwt';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,7 +45,7 @@ app.get('/health', (_req, res) => {
 // Flag to track if routes have been setup
 let routesSetup = false;
 
-// Setup routes and controllers
+// T037: Setup routes and controllers
 async function setupRoutes() {
   // Only setup routes once (prevent duplicate route mounting in tests)
   if (routesSetup) {
@@ -54,27 +56,34 @@ async function setupRoutes() {
   // Initialize repositories
   const userRepository = new UserRepository(AppDataSource);
   const projectRepository = new ProjectRepository(AppDataSource);
-  const taskRepository = new TaskRepository(AppDataSource);
-  const labelRepository = new LabelRepository(AppDataSource);
+  // const boardRepository = new BoardRepository(AppDataSource);
+  // const taskRepository = new TaskRepository(AppDataSource);
+  // const labelRepository = new LabelRepository(AppDataSource);
 
-  // Initialize services
+  // T037: Initialize services
   const userService = new UserService(userRepository);
-  const authService = new AuthService(userRepository, userService);
+  // T037: AuthService теперь требует UserService и JwtService
+  const jwtService = new JwtService({
+    secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+  });
+  const authService = new AuthService(userService, jwtService);
   const projectService = new ProjectService(projectRepository, userRepository);
-  const taskService = new TaskService(taskRepository, labelRepository, projectRepository);
-  const labelService = new LabelService(labelRepository, projectRepository);
+  // const taskService = new TaskService(taskRepository, boardRepository);
+  // const labelService = new LabelService(labelRepository, projectRepository);
 
-  // Initialize controllers
-  const authController = new AuthController(authService, userService);
-  const projectController = new ProjectController(projectService);
-  const taskController = new TaskController(taskService);
-  const labelController = new LabelController(labelService);
+  // T037: Initialize controllers
+  // AuthController теперь требует AuthService и DataSource
+  const authController = new AuthController(authService, AppDataSource);
+  const projectController = new ProjectController(projectService, AppDataSource);
+  // const taskController = new TaskController(taskService);
+  // const labelController = new LabelController(labelService);
 
-  // Mount routes
+  // T037: Mount routes с rate limiter middleware
+  // Auth endpoints уже имеют rate limiter внутри контроллера
   app.use('/api/v1/auth', authController.getRouter());
   app.use('/api/v1/projects', projectController.getRouter());
-  app.use('/api/v1/tasks', taskController.getRouter());
-  app.use('/api/v1/labels', labelController.getRouter());
+  // app.use('/api/v1/tasks', taskController.getRouter());
+  // app.use('/api/v1/labels', labelController.getRouter());
 
   // Global error handler (must be LAST)
   app.use(errorHandler);

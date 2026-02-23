@@ -35,13 +35,39 @@ export interface PaginatedResponse<T> {
  */
 export abstract class BaseController {
   /**
-   * Send a success response
+   * Send a success response (перегрузка для обратной совместимости с res)
    */
-  protected success<T>(res: Response, data: T, statusCode: number = 200): Response {
-    return res.status(statusCode).json({
+  protected success<T>(res: Response, data: T, statusCode?: number): Response;
+  /**
+   * Send a success response (новая версия без res)
+   */
+  protected success<T>(data: T, message?: string): { success: boolean; data: T; message?: string };
+
+  protected success<T>(resOrData: Response | T, dataOrMessage?: T | string, statusCode?: number): any {
+    // Если первый параметр - Response, используем старый формат
+    if (resOrData && typeof (resOrData as any).status === 'function') {
+      const res = resOrData as Response;
+      const data = dataOrMessage as T;
+      const code = statusCode as number | undefined;
+      return res.status(code || 200).json({
+        success: true,
+        data,
+      });
+    }
+
+    // Иначе используем новый формат
+    const data = resOrData as T;
+    const message = dataOrMessage as string | undefined;
+    const response: { success: boolean; data: T; message?: string } = {
       success: true,
       data,
-    });
+    };
+
+    if (message) {
+      (response as any).message = message;
+    }
+
+    return response;
   }
 
   /**
@@ -69,15 +95,14 @@ export abstract class BaseController {
    * Send a paginated response
    */
   protected paginated<T>(
-    res: Response,
     data: T[],
     page: number,
     pageSize: number,
     totalCount: number
-  ): Response {
+  ): PaginatedResponse<T> {
     const totalPages = Math.ceil(totalCount / pageSize);
 
-    const response: PaginatedResponse<T> = {
+    return {
       data,
       pagination: {
         page,
@@ -86,17 +111,6 @@ export abstract class BaseController {
         totalPages,
       },
     };
-
-    // Add pagination headers
-    res.setHeader('X-Total-Count', totalCount.toString());
-    res.setHeader('X-Page-Size', pageSize.toString());
-    res.setHeader('X-Current-Page', page.toString());
-    res.setHeader('X-Total-Pages', totalPages.toString());
-
-    return res.status(200).json({
-      success: true,
-      ...response,
-    });
   }
 
   /**

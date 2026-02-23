@@ -1,26 +1,37 @@
 <!--
   SYNC IMPACT REPORT
   ==================
-  Version Change: INITIAL → 1.0.0
-  Modified Principles: N/A (initial version)
+  Version Change: 1.1.0 → 1.2.0
+  Modified Principles: None
   Added Sections:
-    - Core Principles (5 principles defined)
-    - Architecture Standards
-    - Development Workflow
-    - Quality Standards
-    - Security Requirements
-    - Governance
-  Removed Sections: N/A (initial version)
+    - Project Scope (API-Only Backend)
+    - API Documentation Synchronization
+  Removed Sections: None
   Templates Status:
     ✅ .specify/templates/plan-template.md - Reviewed, aligns with principles
     ✅ .specify/templates/spec-template.md - Reviewed, aligns with principles
     ✅ .specify/templates/tasks-template.md - Reviewed, aligns with principles
     ✅ README.md - Reviewed, references architecture patterns
     ✅ CLAUDE.md - Reviewed, primary implementation guidance
+    ✅ .claude/commands/*.md - Reviewed, no agent-specific references
   Follow-up TODOs: None
 -->
 
 # Kanban Backend Constitution
+
+## Project Scope (NON-NEGOTIABLE)
+
+This is an **API-only backend server**. No frontend or visual components are included.
+
+**Rules**:
+- **API-Only**: All functionality exposed via REST API endpoints
+- **No UI Components**: No HTML, CSS, JavaScript frontend code - visual interface is a separate service
+- **JSON Responses**: All endpoints return JSON (no HTML rendering, no server-side templates)
+- **API-First Design**: All features designed as API contracts first
+- **Client Agnostic**: API must work with any HTTP client (web, mobile, CLI, other services)
+- **OpenAPI Documentation**: All endpoints documented with Swagger/OpenAPI specification
+
+**Rationale**: Separation of concerns enables independent development and deployment. Frontend teams can work with any technology without affecting backend. API-first approach ensures consistent interface regardless of client implementation.
 
 ## Core Principles
 
@@ -87,6 +98,7 @@ All operations MUST validate user ownership before data access or modification.
 - `validateProjectOwnership` middleware REQUIRED for project-scoped resources (attaches `req.project`)
 - Controllers MUST verify `req.user.id === resource.userId` before modifications
 - Repositories MUST filter queries by user/project ID (no cross-user data leaks)
+- Search endpoints MUST filter results to authenticated user's data only
 - Cascade deletes configured: User → Projects → Tasks/Labels (prevent orphaned data)
 
 **Rationale**: Multi-user systems require strict isolation. Ownership validation prevents data leakage and unauthorized access between users.
@@ -120,6 +132,20 @@ tests/
 - Cascade deletes: User deletion cascades to Projects → Tasks/Labels
 - Foreign keys MUST be indexed for query performance
 
+### Task Status Workflow (NON-NEGOTIABLE)
+
+Tasks follow a bi-directional status workflow - any status can transition to any other status.
+
+**Rules**:
+- Valid statuses: `BACKLOG`, `TODO`, `IN_PROGRESS`, `REVIEW`, `DONE`
+- Bi-directional transitions allowed: Tasks can move forward OR backward
+- No restrictions on status changes (e.g., REVIEW → TODO is valid for revision)
+- Status is stored as enum in Task entity
+- Services MUST validate status enum values on updates
+- Status changes MUST be logged for audit trail
+
+**Rationale**: Kanban workflow requires flexibility. Tasks often need to move backward (e.g., from REVIEW back to TODO) when changes are requested. Restricting workflow reduces agility.
+
 ### TypeScript Configuration
 
 - `strict: true` mode enforced (no implicit any, strict null checks)
@@ -138,6 +164,7 @@ tests/
 6. **Mount Router** (e.g., `app.use('/api/v1/resource', controller.getRouter())`)
 7. **Add Tests** (unit + integration) before implementation
 8. **Verify Coverage** meets 70%+ threshold
+9. **Update API Documentation** (MANDATORY for API changes - see API Documentation Synchronization)
 
 ### Testing Workflow
 
@@ -179,6 +206,7 @@ tests/
 - **Caching**: Disabled by default in repositories (data consistency prioritized)
 - **Connection Pooling**: Configured in `dbConfig` for PostgreSQL
 - **Response Time**: API endpoints should respond within 500ms p95 (measure, optimize if exceeded)
+- **Search Queries**: MUST use database indexes on searchable fields (title, description, status, labels)
 
 ## Security Requirements
 
@@ -195,6 +223,7 @@ tests/
 - **No SQL Injection**: TypeORM parameterized queries enforced (no raw SQL without explicit approval)
 - **No XSS**: User input sanitized, no unescaped echoes in responses
 - **File Uploads**: Validate file type, size limits, scan if enabled
+- **Search Input**: Sanitize search parameters to prevent injection attacks
 
 ### CORS & Headers
 
@@ -207,6 +236,57 @@ tests/
 - **No Secrets in Code**: All secrets via `.env` file (`.env.example` as template)
 - **Required Variables**: Database config, JWT secrets, PORT, CORS_ORIGIN
 - **Validation**: App fails fast if required environment variables missing
+
+## API Documentation Synchronization (NON-NEGOTIABLE)
+
+API documentation MUST be synchronized with implementation after every API-modifying task.
+
+**Rules**:
+- **After Each API Change**: Update Swagger/OpenAPI decorators to reflect actual implementation
+- **Documentation Check**: Before committing API changes, verify documentation matches implementation
+- **Breaking Changes**: Update API version and document migration path
+- **Examples**: Provide request/response examples for all endpoints
+- **Deprecated Endpoints**: Mark with deprecation notice and sunset date
+- **Access Documentation**: Swagger UI available at `/api-docs` when server is running
+
+**Verification Checklist** (complete before committing API changes):
+- [ ] Swagger decorators (`@ApiTags`, `@ApiOperation`, `@ApiResponse`) updated
+- [ ] Request DTOs documented with `@ApiProperty()` decorators
+- [ ] Response DTOs documented with `@ApiProperty()` decorators
+- [ ] Error responses documented (400, 401, 403, 404, 500)
+- [ ] New endpoints tagged correctly in Swagger
+- [ ] Deprecated endpoints marked with `@Deprecated()`
+- [ ] Run server and verify `/api-docs` shows correct documentation
+- [ ] Contract tests verify API matches documentation
+
+**Rationale**: API documentation is the contract between backend and frontend. Outdated documentation causes integration issues and developer confusion. Synchronized documentation enables frontend teams to work independently without needing backend team clarification.
+
+## Search & Filtering Requirements
+
+### Multi-Parameter Search (NON-NEGOTIABLE)
+
+The search endpoint MUST support filtering tasks by multiple parameters simultaneously.
+
+**Rules**:
+- Searchable fields: `title`, `description`, `status`, `assignee`, `labels`, `priority`
+- Parameters MUST be composable (search by status + label + assignee)
+- All searches MUST be scoped to authenticated user's projects only
+- Partial matching on text fields (title, description)
+- Exact matching on enum fields (status, priority)
+- Label search uses tag intersection (tasks with ALL specified labels)
+- Results MUST be paginated (max 100 items per page)
+- Search endpoints MUST validate project ownership before querying
+
+**Rationale**: Kanban boards require flexible filtering. Users need to find tasks by multiple criteria (e.g., "all high-priority tasks in BACKLOG for user X"). Complex search reduces manual filtering overhead.
+
+### Search Implementation Pattern
+
+```
+GET /api/v1/search/tasks?status=BACKLOG&label=bug&assignee=user-id
+  → Returns tasks matching ALL criteria
+  → Scoped to user's accessible projects
+  → Paginated response with metadata
+```
 
 ## Governance
 
@@ -231,6 +311,9 @@ tests/
 - **Architectural Review**: Violations of Layered Architecture or Base Class Inheritance block merge
 - **Test Coverage**: PRs dropping coverage below 70% require additional tests
 - **Security Audit**: Authentication, authorization, and input validation reviewed on sensitive changes
+- **Workflow Review**: Task Status Workflow changes require explicit justification
+- **API Documentation Review**: API changes MUST include documentation updates
+- **Scope Review**: No frontend/UI components allowed in backend
 
 ### Complexity Justification
 
@@ -251,4 +334,4 @@ tests/
 - **Manual Review**: No bypassing architecture rules without explicit approval
 - **Documentation**: All exceptions documented in code comments with constitution reference
 
-**Version**: 1.0.0 | **Ratified**: 2026-02-13 | **Last Amended**: 2026-02-13
+**Version**: 1.2.0 | **Ratified**: 2026-02-13 | **Last Amended**: 2026-02-21

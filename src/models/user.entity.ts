@@ -17,8 +17,12 @@ export class User {
   @Generated('uuid')
   id!: string;
 
-  @Column({ unique: true })
-  email!: string;
+  /**
+   * T007: Логин пользователя (уникальный)
+   * Используется вместо email для аутентификации
+   */
+  @Column({ unique: true, length: 255 })
+  login!: string;
 
   @Exclude()
   @Column()

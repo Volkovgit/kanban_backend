@@ -3,7 +3,7 @@
 **Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
 **Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
 
-**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
+**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/plan-template.md` for the execution workflow.
 
 ## Summary
 
@@ -31,7 +31,48 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+**Project Scope - API-Only Backend**:
+- [ ] No frontend/UI components included
+- [ ] All functionality exposed via REST API
+- [ ] JSON responses only (no HTML rendering)
+
+**Principle I - Layered Architecture**:
+- [ ] Controller → Service → Repository separation maintained
+- [ ] No direct repository access from controllers
+- [ ] DTOs used for all input/output validation
+
+**Principle II - Test Coverage Discipline**:
+- [ ] Test plan defined (unit + integration)
+- [ ] Coverage target: 70%+ across all modules
+
+**Principle III - Base Class Inheritance**:
+- [ ] Controllers extend BaseController
+- [ ] Services extend BaseService
+- [ ] Repositories extend BaseRepository
+
+**Principle IV - Manual Dependency Injection**:
+- [ ] No DI frameworks used
+- [ ] Dependencies wired in src/main.ts
+
+**Principle V - Ownership & Authorization**:
+- [ ] Protected routes use authenticate middleware
+- [ ] Project resources use validateProjectOwnership middleware
+- [ ] User/project isolation enforced
+
+**API Documentation Synchronization** (if API-modifying feature):
+- [ ] Swagger decorators updated for new endpoints
+- [ ] Request/Response DTOs documented with @ApiProperty()
+- [ ] Error responses documented (400, 401, 403, 404, 500)
+- [ ] Documentation verification before commit
+
+**Task Status Workflow** (if task-related feature):
+- [ ] Bi-directional status transitions supported
+- [ ] Status enum values validated
+
+**Search Requirements** (if search-related feature):
+- [ ] Multi-parameter filtering supported
+- [ ] Search scoped to user's data only
+- [ ] Results paginated
 
 ## Project Structure
 

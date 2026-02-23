@@ -1,114 +1,104 @@
 /**
- * Authentication Controller
+ * T036/T038: Authentication Controller
  *
- * Handles HTTP requests for user authentication:
- * - Register new user
- * - Login
- * - Refresh access token
- * - Get current user
+ * Обрабатывает HTTP запросы для аутентификации пользователей:
+ * - Регистрация нового пользователя
+ * - Вход в систему
+ * - Обновление токена (refresh)
+ * - Выход из системы (logout)
  */
 
 import { Router, Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
-import { UserService } from '../services/user.service';
-import { RegisterDto, LoginDto, RefreshTokenDto, AuthResponseDto } from '../dto/auth.dto';
-import { validateDto } from '../config/validation';
+import { RegisterDto } from '../dto/auth/register.dto';
+import { LoginDto } from '../dto/auth/login.dto';
+import { RefreshTokenDto } from '../dto/auth/refresh-token.dto';
 import { wrapAsync } from '../middleware/error-handler';
-import { authenticate } from '../middleware/auth.middleware';
+import { createAuthenticateMiddleware } from '../middleware/authenticate';
+import { authRateLimiterMiddleware } from '../middleware/auth-rate-limit';
+import { BaseController } from './base.controller';
 
 /**
- * Authentication controller
- * Express router for auth endpoints
+ * T036: Контроллер аутентификации
+ * Express router для auth endpoints
  */
-export class AuthController {
+export class AuthController extends BaseController {
   private router = Router();
   private authService: AuthService;
-  private userService: UserService;
+  private dataSource: any;
 
-  constructor(authService: AuthService, userService: UserService) {
+  constructor(authService: AuthService, dataSource: any) {
+    super();
     this.authService = authService;
-    this.userService = userService;
+    this.dataSource = dataSource;
     this.setupRoutes();
   }
 
   private setupRoutes(): void {
     /**
-     * POST /auth/register
-     * Register new user
+     * T036/T038: POST /auth/register
+     * Регистрация нового пользователя
      */
     this.router.post(
       '/register',
-      validateDto(RegisterDto),
+      authRateLimiterMiddleware,
       wrapAsync(async (req: Request, res: Response) => {
         const registerDto: RegisterDto = req.body;
-        const result: AuthResponseDto = await this.authService.register(registerDto);
+        const result = await this.authService.register(registerDto);
 
-        res.status(201).json({
-          success: true,
-          data: result,
-        });
+        return res.status(201).json(this.success(result, 'Пользователь успешно зарегистрирован'));
       })
     );
 
     /**
-     * POST /auth/login
-     * Login user
+     * T036/T038: POST /auth/login
+     * Вход в систему с проверкой блокировки аккаунта
      */
     this.router.post(
       '/login',
-      validateDto(LoginDto),
+      authRateLimiterMiddleware,
       wrapAsync(async (req: Request, res: Response) => {
         const loginDto: LoginDto = req.body;
-        const result: AuthResponseDto = await this.authService.login(loginDto);
+        const result = await this.authService.login(loginDto);
 
-        res.status(200).json({
-          success: true,
-          data: result,
-        });
+        return res.status(200).json(this.success(result, 'Успешный вход'));
       })
     );
 
     /**
-     * POST /auth/refresh
-     * Refresh access token with refresh token rotation
+     * T036/T038: POST /auth/refresh
+     * Обновление access токена с ротацией refresh токена
      */
     this.router.post(
       '/refresh',
-      validateDto(RefreshTokenDto),
       wrapAsync(async (req: Request, res: Response) => {
-        const { refreshToken }: RefreshTokenDto = req.body;
-        const result = await this.authService.refreshToken(refreshToken);
+        const refreshTokenDto: RefreshTokenDto = req.body;
+        const result = await this.authService.refresh(refreshTokenDto);
 
-        res.status(200).json({
-          success: true,
-          data: result,
-        });
+        return res.status(200).json(this.success(result, 'Токен успешно обновлён'));
       })
     );
 
     /**
-     * GET /auth/me
-     * Get current authenticated user
+     * T036/T038: POST /auth/logout
+     * Выход из системы с инвалидацией refresh токена
      */
-    this.router.get(
-      '/me',
-      authenticate,
+    this.router.post(
+      '/logout',
+      createAuthenticateMiddleware(this.dataSource),
       wrapAsync(async (req: Request, res: Response) => {
-        // userId is attached to req by authenticate middleware
+        const { refreshToken } = req.body;
         const userId = req.user!.id;
 
-        const user = await this.userService.getById(userId);
+        await this.authService.logout({ refreshToken, userId });
 
-        res.status(200).json({
-          success: true,
-          data: user,
-        });
+        return res.status(200).json(this.success(null, 'Успешный выход'));
       })
     );
   }
 
   /**
-   * Get the router instance
+   * Получить router instance для монтирования в app
    */
   getRouter(): Router {
     return this.router;

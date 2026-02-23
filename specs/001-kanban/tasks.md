@@ -86,34 +86,34 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T017 [P] [US1] Contract test для POST /auth/register в tests/contract/auth.spec.ts
-- [ ] T018 [P] [US1] Contract test для POST /auth/login в tests/contract/auth.spec.ts
-- [ ] T019 [P] [US1] Contract test для POST /auth/refresh в tests/contract/auth.spec.ts
-- [ ] T020 [P] [US1] Contract test для POST /auth/logout в tests/contract/auth.spec.ts
-- [ ] T021 [P] [US1] Integration test для регистрации и логина в tests/integration/auth.spec.ts
-- [ ] T022 [P] [US1] Integration test для блокировки аккаунта после 5 неудачных попыток в tests/integration/auth.spec.ts
-- [ ] T023 [P] [US1] Integration test для refresh токена в tests/integration/auth.spec.ts
-- [ ] T024 [P] [US1] Integration test для logout в tests/integration/auth.spec.ts
-- [ ] T025 [P] [US1] Unit test для UserService хеширования паролей в tests/unit/user.service.spec.ts
-- [ ] T026 [P] [US1] Unit test для AuthService JWT генерации в tests/unit/auth.service.spec.ts
+- [X] T017 [P] [US1] Contract test для POST /auth/register в tests/contract/auth.spec.ts
+- [X] T018 [P] [US1] Contract test для POST /auth/login в tests/contract/auth.spec.ts
+- [X] T019 [P] [US1] Contract test для POST /auth/refresh в tests/contract/auth.spec.ts
+- [X] T020 [P] [US1] Contract test для POST /auth/logout в tests/contract/auth.spec.ts
+- [X] T021 [P] [US1] Integration test для регистрации и логина в tests/integration/auth.spec.ts
+- [X] T022 [P] [US1] Integration test для блокировки аккаунта после 5 неудачных попыток в tests/integration/auth.spec.ts
+- [X] T023 [P] [US1] Integration test для refresh токена в tests/integration/auth.spec.ts
+- [X] T024 [P] [US1] Integration test для logout в tests/integration/auth.spec.ts
+- [X] T025 [P] [US1] Unit test для UserService хеширования паролей в tests/unit/user.service.spec.ts
+- [X] T026 [P] [US1] Unit test для AuthService JWT генерации в tests/unit/auth.service.spec.ts
 
 ### Implementation for User Story 1
 
 #### DTOs
 
-- [ ] T027 [P] [US1] Создать RegisterDto в src/dto/auth/register.dto.ts с валидацией login (3-255 chars) и password (8+ chars, 1 uppercase, 1 lowercase, 1 digit)
-- [ ] T028 [P] [US1] Создать LoginDto в src/dto/auth/login.dto.ts с валидацией login и password
-- [ ] T029 [P] [US1] Создарить RefreshTokenDto в src/dto/auth/refresh-token.dto.ts
-- [ ] T030 [P] [US1] Создать AuthResponseDto в src/dto/auth/auth-response.dto.ts с полями accessToken, refreshToken
+- [X] T027 [P] [US1] Создать RegisterDto в src/dto/auth/register.dto.ts с валидацией login (3-255 chars) и password (8+ chars, 1 uppercase, 1 lowercase, 1 digit)
+- [X] T028 [P] [US1] Создать LoginDto в src/dto/auth/login.dto.ts с валидацией login и password
+- [X] T029 [P] [US1] Создарить RefreshTokenDto в src/dto/auth/refresh-token.dto.ts
+- [X] T030 [P] [US1] Создать AuthResponseDto в src/dto/auth/auth-response.dto.ts с полями accessToken, refreshToken
 
 #### Repository
 
-- [ ] T031 [US1] Обновить UserRepository в src/repositories/user.repository.ts с методами findByLogin, incrementFailedAttempts, lockAccount, resetFailedAttempts, setRefreshToken, removeRefreshToken
+- [X] T031 [US1] Обновить UserRepository в src/repositories/user.repository.ts с методами findByLogin, incrementFailedAttempts, lockAccount, resetFailedAttempts, setRefreshToken, removeRefreshToken
 
 #### Service
 
-- [ ] T032 [US1] Обновить UserService в src/services/user.service.ts с методом create для регистрации с bcrypt хешированием (12 rounds)
-- [ ] T033 [US1] Обновить AuthService в src/services/auth.service.ts с методами:
+- [X] T032 [US1] Обновить UserService в src/services/user.service.ts с методом create для регистрации с bcrypt хешированием (12 rounds)
+- [X] T033 [US1] Обновить AuthService в src/services/auth.service.ts с методами:
   - login (валидация пароля, проверка блокировки, генерация JWT токенов)
   - register (создание пользователя)
   - refresh (валидация refresh токена, генерация нового access токена)
@@ -122,12 +122,12 @@
 
 #### Middleware
 
-- [ ] T034 [P] [US1] Создать authenticate middleware в src/middleware/authenticate.ts для валидации JWT Bearer токена
-- [ ] T035 [P] [US1] Создать rate limiter middleware для auth endpoints в src/middleware/auth-rate-limit.ts
+- [X] T034 [P] [US1] Создать authenticate middleware в src/middleware/authenticate.ts для валидации JWT Bearer токена
+- [X] T035 [P] [US1] Создать rate limiter middleware для auth endpoints в src/middleware/auth-rate-limit.ts
 
 #### Controller
 
-- [ ] T036 [US1] Обновить AuthController в src/controllers/auth.controller.ts с эндпоинтами:
+- [X] T036 [US1] Обновить AuthController в src/controllers/auth.controller.ts с эндпоинтами:
   - POST /auth/register (регистрация)
   - POST /auth/login (вход с проверкой блокировки)
   - POST /auth/refresh (обновление токена)
@@ -135,12 +135,12 @@
 
 #### Routes
 
-- [ ] T037 [US1] Зарегистрировать auth routes в src/main.ts с применением rate limiter middleware
+- [X] T037 [US1] Зарегистрировать auth routes в src/main.ts с применением rate limiter middleware
 
 #### Swagger Documentation
 
-- [ ] T038 [US1] Добавить Swagger декораторы в AuthController (зависит от T036)
-- [ ] T039 [US1] Добавить @ApiProperty() декораторы во все Auth DTOs (зависит от T027-T030)
+- [X] T038 [US1] Добавить Swagger декораторы в AuthController (зависит от T036)
+- [X] T039 [US1] Добавить @ApiProperty() декораторы во все Auth DTOs (зависит от T027-T030)
 
 **Checkpoint**: User Story 1 полностью функциональна и независимо тестируема. Пользователи могут регистрироваться, входить, обновлять токены и выходить.
 

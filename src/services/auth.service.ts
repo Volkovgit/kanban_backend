@@ -1,186 +1,259 @@
 /**
- * Authentication Service
+ * T033: Authentication Service
  *
- * Handles user authentication: registration, login, token generation and refresh.
- * Uses bcrypt for password hashing and JWT for tokens.
+ * Обрабатывает аутентификацию пользователей: регистрация, логин, refresh токен и logout.
+ * Использует bcrypt для хеширования паролей и JWT для токенов.
  */
 
-import { UserRepository } from '../repositories/user.repository';
+import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { UserService } from './user.service';
-import { RegisterDto, LoginDto, AuthResponseDto, TokenResponseDto } from '../dto/auth.dto';
-import { AppError } from '../middleware/error-handler';
-import * as jwtConfig from '../config/jwt';
+import { User } from '../models/user.entity';
+import { RegisterDto } from '../dto/auth/register.dto';
+import { LoginDto } from '../dto/auth/login.dto';
+import { RefreshTokenDto } from '../dto/auth/refresh-token.dto';
+import { AuthResponseDto, RegisterResponseDto } from '../dto/auth/auth-response.dto';
+import * as bcrypt from 'bcrypt';
 
 /**
- * Authentication service
+ * T033: Сервис аутентификации
  */
+@Injectable()
 export class AuthService {
+  private readonly ACCESS_TOKEN_EXPIRY = '1h'; // 1 час
+  private readonly REFRESH_TOKEN_EXPIRY = '30d'; // 30 дней
+  private readonly LOCK_DURATION_MINUTES = 15;
+
   constructor(
-    private userRepository: UserRepository,
     private userService: UserService,
+    private jwtService: JwtService,
   ) {}
 
   /**
-   * Register a new user
-   * @param registerDto - Registration data
-   * @returns Auth response with tokens and user data
-   * @throws AppError if email already exists
+   * T033: Регистрация нового пользователя
+   * @param registerDto - Данные регистрации (login, password)
+   * @returns Данные созданного пользователя
+   * @throws ConflictException если пользователь уже существует
    */
-  async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    const { email, password } = registerDto;
+  async register(registerDto: RegisterDto): Promise<RegisterResponseDto> {
+    const { login, password } = registerDto;
 
-    try {
-      // Check if user already exists
-      const existingUser = await this.userRepository.findByEmail(email);
-
-      if (existingUser) {
-        throw new AppError(
-          409,
-          'User with this email already exists',
-          'Conflict'
-        );
-      }
-
-      // Hash password
-      const passwordHash = await jwtConfig.hashPassword(password);
-
-      // Create user
-      const user = await this.userRepository.createWithPassword(email, passwordHash);
-
-      // Generate tokens
-      const tokens = jwtConfig.generateTokenPair(user.id, user.email);
-
-      // Return auth response
-      return {
-        ...tokens,
-        user: {
-          id: user.id,
-          email: user.email,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-        },
-      };
-    } catch (error) {
-      // Handle database unique constraint violation
-      if (error instanceof Error && 'code' in error && error.code === '23505') {
-        throw new AppError(
-          409,
-          'User with this email already exists',
-          'Conflict'
-        );
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Login user
-   * @param loginDto - Login data
-   * @returns Auth response with tokens and user data
-   * @throws AppError if credentials are invalid
-   */
-  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
-    const { email, password } = loginDto;
-
-    // Find user by email
-    const user = await this.userRepository.findByEmail(email);
-
-    if (!user) {
-      throw new AppError(
-        401,
-        'Invalid email or password',
-        'Unauthorized'
-      );
+    // Проверяем что пользователь не существует
+    const existingUser = await this.userService.findByLogin(login);
+    if (existingUser) {
+      throw new ConflictException('Пользователь с таким логином уже существует');
     }
 
-    // Verify password
-    const isPasswordValid = await jwtConfig.comparePassword(password, user.passwordHash);
+    // Создаём пользователя (пароль хешируется в UserService)
+    const user = await this.userService.create({ login, password });
 
-    if (!isPasswordValid) {
-      throw new AppError(
-        401,
-        'Invalid email or password',
-        'Unauthorized'
-      );
-    }
-
-    // Generate tokens
-    const tokens = jwtConfig.generateTokenPair(user.id, user.email);
-
-    // Return auth response
     return {
-      ...tokens,
-      user: {
-        id: user.id,
-        email: user.email,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      },
+      id: user.id,
+      login: user.login,
     };
   }
 
   /**
-   * Refresh access token using refresh token
-   * Implements refresh token rotation: issues new access token AND new refresh token
-   * @param refreshToken - Refresh token
-   * @returns New access token and new refresh token (rotation)
-   * @throws AppError if refresh token is invalid
+   * T033: Вход в систему
+   * Проверяет блокировку аккаунта, валидирует пароль, генерирует JWT токены
+   * @param loginDto - Данные для входа (login, password)
+   * @returns Access и refresh токены
+   * @throws UnauthorizedException если креденшалы невалидны или аккаунт заблокирован
    */
-  async refreshToken(refreshToken: string): Promise<TokenResponseDto & { refreshToken: string }> {
+  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
+    const { login, password } = loginDto;
+
+    // Находим пользователя
+    const user = await this.userService.findByLogin(login);
+    if (!user) {
+      throw new UnauthorizedException('Неверный логин или пароль');
+    }
+
+    // T033: Проверяем блокировку аккаунта
+    const now = new Date();
+    if (user.lockedUntil && new Date(user.lockedUntil) > now) {
+      throw new UnauthorizedException(
+        `Аккаунт заблокирован до ${new Date(user.lockedUntil).toLocaleString()}`
+      );
+    }
+
+    // Проверяем пароль
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      // Увеличиваем счётчик неудачных попыток
+      await this.userService.incrementFailedAttempts(user.id);
+
+      // Проверяем нужно ли заблокировать
+      const updatedUser = await this.userService.findByLogin(login);
+      if (updatedUser && updatedUser.lockedUntil && new Date(updatedUser.lockedUntil) > now) {
+        throw new UnauthorizedException(
+          `Аккаунт заблокирован после 5 неудачных попыток на ${this.LOCK_DURATION_MINUTES} минут`
+        );
+      }
+
+      throw new UnauthorizedException('Неверный логин или пароль');
+    }
+
+    // Сбрасываем счётчик неудачных попыток при успешном входе
+    await this.userService.resetFailedAttempts(user.id);
+
+    // Генерируем токены
+    const accessToken = await this.generateAccessToken(user);
+    const refreshToken = await this.generateRefreshToken(user);
+
+    // Сохраняем refresh токен в БД
+    await this.userService.setRefreshToken(user.id, refreshToken);
+
+    return {
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  /**
+   * T033: Обновление access токена
+   * Валидирует refresh токен и генерирует новую пару токенов (ротация)
+   * @param refreshTokenDto - Refresh токен
+   * @returns Новая пара access и refresh токенов
+   * @throws UnauthorizedException если токен невалиден
+   */
+  async refresh(refreshTokenDto: RefreshTokenDto): Promise<AuthResponseDto> {
+    const { refreshToken } = refreshTokenDto;
+
     try {
-      // Verify refresh token
-      const payload = jwtConfig.verifyRefreshToken(refreshToken);
+      // Верифицируем refresh токен
+      const payload = await this.jwtService.verifyAsync(refreshToken);
 
-      // Get user to ensure they still exist
-      const user = await this.userService.getById(payload.userId);
+      // Проверяем что это именно refresh токен
+      if (payload.type !== 'refresh') {
+        throw new UnauthorizedException('Невалидный refresh токен');
+      }
 
-      // Generate new access token
-      const accessToken = jwtConfig.generateAccessToken(user.id, user.email);
-      const expiresIn = jwtConfig.getAccessTokenExpirationTime();
+      // Находим пользователя
+      const user = await this.userService.findByLogin(payload.login);
+      if (!user) {
+        throw new UnauthorizedException('Пользователь не найден');
+      }
 
-      // Generate new refresh token (rotation)
-      const newRefreshToken = jwtConfig.generateRefreshToken(user.id, user.email);
+      // T033: Проверяем что refresh токен совпадает с сохранённым в БД
+      const isTokenValid = await this.userService.verifyRefreshToken(user.id, refreshToken);
+      if (!isTokenValid) {
+        throw new UnauthorizedException('Невалидный refresh токен');
+      }
 
-      // TODO: Implement refresh token blacklist/invalidation
-      // The old refresh token should be invalidated to prevent replay attacks
-      // This can be done with:
-      // 1. A Redis/DB store of blacklisted tokens
-      // 2. Adding a token version/rotation counter to the user entity
-      // 3. Storing issued refresh tokens and checking against them
+      // Генерируем новую пару токенов (ротация)
+      const newAccessToken = await this.generateAccessToken(user);
+      const newRefreshToken = await this.generateRefreshToken(user);
+
+      // Обновляем refresh токен в БД
+      await this.userService.setRefreshToken(user.id, newRefreshToken);
 
       return {
-        accessToken,
-        expiresIn,
+        accessToken: newAccessToken,
         refreshToken: newRefreshToken,
       };
     } catch (error) {
-      throw new AppError(
-        401,
-        'Invalid or expired refresh token',
-        'Unauthorized'
-      );
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Невалидный или просроченный refresh токен');
     }
   }
 
   /**
-   * Validate user access token
-   * @param token - JWT access token
-   * @returns User ID and email from token
-   * @throws AppError if token is invalid
+   * T033: Выход из системы
+   * Удаляет refresh токен из БД (инвалидирует его)
+   * @param logoutDto - Данные для выхода (refreshToken, userId)
    */
-  validateToken(token: string): { userId: string; email: string } {
+  async logout(logoutDto: { refreshToken: string; userId: string }): Promise<void> {
+    const { refreshToken, userId } = logoutDto;
+
     try {
-      const payload = jwtConfig.verifyAccessToken(token);
+      // Верифицируем токен
+      const payload = await this.jwtService.verifyAsync(refreshToken);
+
+      // Проверяем что userId совпадает
+      if (payload.sub !== userId) {
+        throw new UnauthorizedException('Невалидный токен');
+      }
+
+      // T033: Удаляем refresh токен из БД
+      await this.userService.removeRefreshToken(userId);
+    } catch (error) {
+      // Игнорируем ошибки при logout - токен уже мог быть удалён
+      // Это позволяет безопасно логаутиться даже с просроченным токеном
+    }
+  }
+
+  /**
+   * T033: Проверить заблокирован ли аккаунт
+   * @param user - Пользователь для проверки
+   * @returns True если аккаунт заблокирован
+   */
+  verifyAccountLock(user: User): boolean {
+    if (!user.lockedUntil) {
+      return false;
+    }
+
+    // Проверяем истекла ли блокировка
+    const now = new Date();
+    const lockExpiry = new Date(user.lockedUntil);
+
+    if (now > lockExpiry) {
+      // Блокировка истекла - можно разблокировать
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Сгенерировать access токен
+   * @param user - Пользователь
+   * @returns JWT access токен
+   */
+  private async generateAccessToken(user: User): Promise<string> {
+    const payload = {
+      sub: user.id,
+      login: user.login,
+    };
+
+    return this.jwtService.signAsync(payload, {
+      expiresIn: this.ACCESS_TOKEN_EXPIRY,
+    });
+  }
+
+  /**
+   * Сгенерировать refresh токен
+   * @param user - Пользователь
+   * @returns JWT refresh токен
+   */
+  private async generateRefreshToken(user: User): Promise<string> {
+    const payload = {
+      sub: user.id,
+      login: user.login,
+      type: 'refresh' as const,
+    };
+
+    return this.jwtService.signAsync(payload, {
+      expiresIn: this.REFRESH_TOKEN_EXPIRY,
+    });
+  }
+
+  /**
+   * Верифицировать access токен
+   * @param token - JWT токен
+   * @returns Payload токена
+   */
+  async verifyAccessToken(token: string): Promise<{ sub: string; login: string }> {
+    try {
+      const payload = await this.jwtService.verifyAsync(token);
       return {
-        userId: payload.userId,
-        email: payload.email,
+        sub: payload.sub,
+        login: payload.login,
       };
     } catch (error) {
-      throw new AppError(
-        401,
-        'Invalid or expired access token',
-        'Unauthorized'
-      );
+      throw new UnauthorizedException('Невалидный или просроченный access токен');
     }
   }
 }
