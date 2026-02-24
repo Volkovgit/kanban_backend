@@ -1,40 +1,49 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
-import { AppModule } from '@/src/app.module';
-import { DataSource } from 'typeorm';
-import { User } from '@/src/models/user.entity';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals';
+import request from 'supertest';
+import { app, setupRoutes } from '../../src/main';
+import { AppDataSource } from '../../src/config/data-source';
+import { UserService } from '../../src/services/user.service';
+import { UserRepository } from '../../src/repositories/user.repository';
 
 /**
  * Integration tests для Authentication endpoints
  * Тестируют полную интеграцию с базой данных
  */
 describe('Auth Integration Tests', () => {
-  let app: INestApplication;
   let server: any;
-  let dataSource: DataSource;
+  let userService: UserService;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+    // Инициализируем базу данных
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+    }
 
-    app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe());
-    await app.init();
+    // Setup routes
+    await setupRoutes();
 
-    server = app.getHttpServer();
-    dataSource = app.get(DataSource);
+    // Инициализируем сервисы
+    const userRepository = new UserRepository(AppDataSource);
+    userService = new UserService(userRepository);
+
+    server = app;
   });
 
   afterAll(async () => {
-    await app.close();
+    if (AppDataSource.isInitialized) {
+      await AppDataSource.query(`DELETE FROM "user" WHERE login LIKE 'integration_test_%'`);
+      await AppDataSource.destroy();
+    }
+  });
+
+  beforeEach(async () => {
+    // Очистка тестовых пользователей перед каждым тестом
+    await AppDataSource.query(`DELETE FROM "user" WHERE login LIKE 'integration_test_%'`);
   });
 
   afterEach(async () => {
-    // Очистка тестовых пользователей после каждого теста
-    const userRepository = dataSource.getRepository(User);
-    await userRepository.delete({ login: Like('integration_test_%') });
+    // Очистка после каждого теста
+    await AppDataSource.query(`DELETE FROM "user" WHERE login LIKE 'integration_test_%'`);
   });
 
   describe('T021: Регистрация и логин', () => {
@@ -50,7 +59,7 @@ describe('Auth Integration Tests', () => {
         .send(testUser)
         .expect(201);
 
-      expect(registerResponse.body.data.user.login).toBe(testUser.login);
+      expect(registerResponse.body.data.login).toBe(testUser.login);
 
       // Логин с теми же креденшлами
       const loginResponse = await request(server)
@@ -62,9 +71,7 @@ describe('Auth Integration Tests', () => {
       expect(loginResponse.body.data).toHaveProperty('refreshToken');
 
       // Проверяем что пользователь в БД имеет хеш пароля
-      const user = await dataSource.getRepository(User).findOne({
-        where: { login: testUser.login },
-      });
+      const user = await userService.findByLogin(testUser.login);
 
       expect(user).toBeDefined();
       expect(user?.passwordHash).toBeDefined();
@@ -82,9 +89,7 @@ describe('Auth Integration Tests', () => {
         .post('/api/v1/auth/register')
         .send(testUser);
 
-      const user = await dataSource.getRepository(User).findOne({
-        where: { login: testUser.login },
-      });
+      const user = await userService.findByLogin(testUser.login);
 
       expect(user?.passwordHash).toBeDefined();
       // bcrypt hash начинается с $2b$ или $2a$
@@ -98,11 +103,19 @@ describe('Auth Integration Tests', () => {
       password: 'SecurePass123',
     };
 
-    beforeAll(async () => {
+    beforeEach(async () => {
+      // Очистка перед тестом
+      await AppDataSource.query(`DELETE FROM "user" WHERE login LIKE 'integration_test_lock_%'`);
+
       // Создаём пользователя
       await request(server)
         .post('/api/v1/auth/register')
         .send(testUser);
+    });
+
+    afterEach(async () => {
+      // Очистка после теста
+      await AppDataSource.query(`DELETE FROM "user" WHERE login LIKE 'integration_test_lock_%'`);
     });
 
     it('должен заблокировать аккаунт после 5 неудачных попыток', async () => {
@@ -120,12 +133,11 @@ describe('Auth Integration Tests', () => {
         .send(testUser);
 
       expect(response.status).toBe(401);
-      expect(response.body.error.message).toContain('locked') || expect(response.body.error.message).toContain('блок');
+      const hasLockMessage = response.body.error.message?.includes('заблокирован') || response.body.error.message?.includes('locked');
+      expect(hasLockMessage).toBe(true);
 
       // Проверяем поле lockedUntil в БД
-      const user = await dataSource.getRepository(User).findOne({
-        where: { login: testUser.login },
-      });
+      const user = await userService.findByLogin(testUser.login);
 
       expect(user?.failedLoginAttempts).toBe(5);
       expect(user?.lockedUntil).toBeDefined();
@@ -151,9 +163,7 @@ describe('Auth Integration Tests', () => {
       }
 
       // Проверяем что счётчик увеличился
-      let user = await dataSource.getRepository(User).findOne({
-        where: { login: testUser2.login },
-      });
+      let user = await userService.findByLogin(testUser2.login);
       expect(user?.failedLoginAttempts).toBe(3);
 
       // Успешный логин
@@ -163,9 +173,7 @@ describe('Auth Integration Tests', () => {
         .expect(200);
 
       // Счётчик должен сброситься
-      user = await dataSource.getRepository(User).findOne({
-        where: { login: testUser2.login },
-      });
+      user = await userService.findByLogin(testUser2.login);
       expect(user?.failedLoginAttempts).toBe(0);
     });
 
@@ -188,14 +196,12 @@ describe('Auth Integration Tests', () => {
       }
 
       // Устанавливаем lockedUntil в прошлое (симуляция прошедшего времени)
-      const user = await dataSource.getRepository(User).findOne({
-        where: { login: testUser3.login },
-      });
+      const user = await userService.findByLogin(testUser3.login);
 
       if (user) {
         const pastDate = new Date(Date.now() - 16 * 60 * 1000); // 16 минут назад
         user.lockedUntil = pastDate;
-        await dataSource.getRepository(User).save(user);
+        await AppDataSource.getRepository('User').save(user);
       }
 
       // Теперь логин должен работать
@@ -286,9 +292,7 @@ describe('Auth Integration Tests', () => {
         .expect(200);
 
       // Проверяем что refresh токен удалён из БД
-      const user = await dataSource.getRepository(User).findOne({
-        where: { login: testUser.login },
-      });
+      const user = await userService.findByLogin(testUser.login);
 
       expect(user?.refreshToken).toBeNull();
 
@@ -332,8 +336,3 @@ describe('Auth Integration Tests', () => {
     });
   });
 });
-
-// Helper function for cleanup
-function Like(pattern: string) {
-  return { $like: pattern };
-}

@@ -17,6 +17,7 @@ import { AppDataSource } from '../../src/config/data-source';
 import { AuthService } from '../../src/services/auth.service';
 import { UserService } from '../../src/services/user.service';
 import { UserRepository } from '../../src/repositories/user.repository';
+import { JwtService } from '@nestjs/jwt';
 
 // Use unique test run identifier to avoid conflicts between test files
 const testRunId = Date.now() + Math.random().toString(36).substring(2, 8);
@@ -41,21 +42,24 @@ describe('Project CRUD Flow - Integration Tests', () => {
     // Initialize auth service for creating test users
     const userRepository = new UserRepository(AppDataSource);
     const userService = new UserService(userRepository);
-    authService = new AuthService(userRepository, userService);
+    const jwtService = new JwtService({
+      secret: process.env.JWT_SECRET || 'your-secret-key',
+    });
+    authService = new AuthService(userService, jwtService);
   });
 
   afterAll(async () => {
     // Clean up all test data
     await AppDataSource.query(`DELETE FROM task WHERE "title" LIKE '%${testRunId}%'`);
     await AppDataSource.query(`DELETE FROM project WHERE "name" LIKE '%${testRunId}%'`);
-    await AppDataSource.query(`DELETE FROM "user" WHERE email LIKE '%${testRunId}%'`);
+    await AppDataSource.query(`DELETE FROM "user" WHERE login LIKE '%${testRunId}%'`);
   });
 
   beforeEach(async () => {
     // Clean up before each test
     await AppDataSource.query(`DELETE FROM task WHERE "title" LIKE '%${testRunId}%'`);
     await AppDataSource.query(`DELETE FROM project WHERE "name" LIKE '%${testRunId}%'`);
-    await AppDataSource.query(`DELETE FROM "user" WHERE email LIKE '%${testRunId}%'`);
+    await AppDataSource.query(`DELETE FROM "user" WHERE login LIKE '%${testRunId}%'`);
     userTokens.clear();
   });
 
@@ -63,7 +67,7 @@ describe('Project CRUD Flow - Integration Tests', () => {
     // Clean up after each test
     await AppDataSource.query(`DELETE FROM task WHERE "title" LIKE '%${testRunId}%'`);
     await AppDataSource.query(`DELETE FROM project WHERE "name" LIKE '%${testRunId}%'`);
-    await AppDataSource.query(`DELETE FROM "user" WHERE email LIKE '%${testRunId}%'`);
+    await AppDataSource.query(`DELETE FROM "user" WHERE login LIKE '%${testRunId}%'`);
     userTokens.clear();
   });
 
@@ -71,13 +75,18 @@ describe('Project CRUD Flow - Integration Tests', () => {
    * Helper: Create a test user and return their auth token and user ID
    */
   async function createTestUser(userSuffix: string): Promise<{ accessToken: string; userId: string }> {
-    const email = `user-${userSuffix}-${testRunId}@example.com`;
+    const login = `user-${userSuffix}-${testRunId}@example.com`;
     const password = 'Password123!';
 
-    const result = await authService.register({ email, password });
-    const tokens = { accessToken: result.accessToken, userId: result.user.id };
-    userTokens.set(userSuffix, tokens);
-    return tokens;
+    // Register user
+    await authService.register({ login, password });
+
+    // Login to get tokens
+    const tokens = await authService.login({ login, password });
+    const userId = tokens.accessToken ? JSON.parse(Buffer.from(tokens.accessToken.split('.')[1], 'base64').toString()).sub : null;
+
+    userTokens.set(userSuffix, { accessToken: tokens.accessToken, userId });
+    return { accessToken: tokens.accessToken, userId };
   }
 
   /**

@@ -216,6 +216,8 @@ export class AuthService {
     const payload = {
       sub: user.id,
       login: user.login,
+      // Добавляем уникальный идентификатор для каждого токена
+      jti: `${user.id}-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`,
     };
 
     return this.jwtService.signAsync(payload, {
@@ -233,6 +235,8 @@ export class AuthService {
       sub: user.id,
       login: user.login,
       type: 'refresh' as const,
+      // Добавляем уникальный идентификатор для каждого токена
+      jti: `${user.id}-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`,
     };
 
     return this.jwtService.signAsync(payload, {

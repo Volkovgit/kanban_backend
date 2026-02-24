@@ -17,9 +17,9 @@ export const dbConfig: PostgresConnectionOptions & DataSourceOptions = {
   type: 'postgres',
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5432', 10),
-  username: process.env.DB_USERNAME || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
-  database: process.env.DB_DATABASE || 'kanban_dev',
+  username: process.env.DB_USERNAME || 'kanban_user',
+  password: process.env.DB_PASSWORD || 'kanban_password',
+  database: process.env.DB_DATABASE || 'kanban_db',
 
   // Entity locations
   entities: [join(__dirname, '..', 'models', '**', '*.entity.{ts,js}')],

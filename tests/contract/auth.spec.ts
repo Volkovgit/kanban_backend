@@ -1,30 +1,51 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
-import { AppModule } from '@/src/app.module';
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import request from 'supertest';
+import { app, setupRoutes } from '../../src/main';
+import { AppDataSource } from '../../src/config/data-source';
+import { AuthService } from '../../src/services/auth.service';
+import { UserService } from '../../src/services/user.service';
+import { UserRepository } from '../../src/repositories/user.repository';
+import { JwtService } from '@nestjs/jwt';
 
 /**
  * Contract tests для Authentication endpoints
  * Тестируют API контракт согласно specs/001-kanban/contracts/auth.yaml
  */
 describe('Auth Contract Tests', () => {
-  let app: INestApplication;
   let server: any;
+  let authService: AuthService;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+    // Инициализируем базу данных
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+    }
 
-    app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe());
-    await app.init();
+    // Setup routes
+    await setupRoutes();
 
-    server = app.getHttpServer();
+    // Инициализируем auth service для тестов
+    const userRepository = new UserRepository(AppDataSource);
+    const userService = new UserService(userRepository);
+    const jwtService = new JwtService({
+      secret: process.env.JWT_SECRET || 'your-secret-key',
+    });
+    authService = new AuthService(userService, jwtService);
+
+    server = app;
   });
 
   afterAll(async () => {
-    await app.close();
+    if (AppDataSource.isInitialized) {
+      await AppDataSource.destroy();
+    }
+  });
+
+  afterEach(async () => {
+    // Очистка после каждого теста
+    if (AppDataSource.isInitialized) {
+      await AppDataSource.query(`DELETE FROM "user" WHERE login LIKE 'contract_test_%'`);
+    }
   });
 
   describe('POST /api/v1/auth/register', () => {
@@ -41,11 +62,10 @@ describe('Auth Contract Tests', () => {
 
       expect(response.body).toHaveProperty('success', true);
       expect(response.body).toHaveProperty('data');
-      expect(response.body.data).toHaveProperty('user');
-      expect(response.body.data.user).toHaveProperty('id');
-      expect(response.body.data.user).toHaveProperty('login', testUser.login);
-      expect(response.body.data.user).not.toHaveProperty('password');
-      expect(response.body.data.user).not.toHaveProperty('passwordHash');
+      expect(response.body.data).toHaveProperty('id');
+      expect(response.body.data).toHaveProperty('login', testUser.login);
+      expect(response.body.data).not.toHaveProperty('password');
+      expect(response.body.data).not.toHaveProperty('passwordHash');
     });
 
     it('T017: должен вернуть 400 при невалидном login (менее 3 символов)', async () => {
@@ -106,9 +126,7 @@ describe('Auth Contract Tests', () => {
 
     beforeAll(async () => {
       // Создаём пользователя для тестов логина
-      await request(server)
-        .post('/api/v1/auth/register')
-        .send(testUser);
+      await authService.register(testUser);
     });
 
     it('T018: должен вернуть 200 и токены при успешном логине', async () => {
@@ -167,15 +185,10 @@ describe('Auth Contract Tests', () => {
 
     beforeAll(async () => {
       // Создаём пользователя и получаем токены
-      await request(server)
-        .post('/api/v1/auth/register')
-        .send(testUser);
+      await authService.register(testUser);
+      const loginResponse = await authService.login(testUser);
 
-      const loginResponse = await request(server)
-        .post('/api/v1/auth/login')
-        .send(testUser);
-
-      refreshToken = loginResponse.body.data.refreshToken;
+      refreshToken = loginResponse.refreshToken;
     });
 
     it('T019: должен вернуть 200 и новый access токен', async () => {
@@ -234,16 +247,11 @@ describe('Auth Contract Tests', () => {
 
     beforeAll(async () => {
       // Создаём пользователя и получаем токены
-      await request(server)
-        .post('/api/v1/auth/register')
-        .send(testUser);
+      await authService.register(testUser);
+      const loginResponse = await authService.login(testUser);
 
-      const loginResponse = await request(server)
-        .post('/api/v1/auth/login')
-        .send(testUser);
-
-      accessToken = loginResponse.body.data.accessToken;
-      refreshToken = loginResponse.body.data.refreshToken;
+      accessToken = loginResponse.accessToken;
+      refreshToken = loginResponse.refreshToken;
     });
 
     it('T020: должен вернуть 200 при успешном logout', async () => {

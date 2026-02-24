@@ -17,6 +17,7 @@ import { wrapAsync } from '../middleware/error-handler';
 import { createAuthenticateMiddleware } from '../middleware/authenticate';
 import { authRateLimiterMiddleware } from '../middleware/auth-rate-limit';
 import { BaseController } from './base.controller';
+import { validateDto } from '../config/validation';
 
 /**
  * T036: Контроллер аутентификации
@@ -42,6 +43,7 @@ export class AuthController extends BaseController {
     this.router.post(
       '/register',
       authRateLimiterMiddleware,
+      validateDto(RegisterDto),
       wrapAsync(async (req: Request, res: Response) => {
         const registerDto: RegisterDto = req.body;
         const result = await this.authService.register(registerDto);
@@ -57,6 +59,7 @@ export class AuthController extends BaseController {
     this.router.post(
       '/login',
       authRateLimiterMiddleware,
+      validateDto(LoginDto),
       wrapAsync(async (req: Request, res: Response) => {
         const loginDto: LoginDto = req.body;
         const result = await this.authService.login(loginDto);
@@ -71,6 +74,7 @@ export class AuthController extends BaseController {
      */
     this.router.post(
       '/refresh',
+      validateDto(RefreshTokenDto),
       wrapAsync(async (req: Request, res: Response) => {
         const refreshTokenDto: RefreshTokenDto = req.body;
         const result = await this.authService.refresh(refreshTokenDto);
@@ -85,6 +89,7 @@ export class AuthController extends BaseController {
      */
     this.router.post(
       '/logout',
+      validateDto(RefreshTokenDto),
       createAuthenticateMiddleware(this.dataSource),
       wrapAsync(async (req: Request, res: Response) => {
         const { refreshToken } = req.body;

@@ -7,6 +7,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { ValidationError } from 'class-validator';
+import { HttpException } from '@nestjs/common';
 
 /**
  * Formatted validation error for API responses
@@ -60,13 +61,49 @@ export function errorHandler(
     });
   }
 
+  // Handle NestJS HttpExceptions
+  if (err instanceof HttpException) {
+    const statusCode = err.getStatus();
+    const exceptionResponse = err.getResponse();
+
+    let error = 'Error';
+    let message = err.message;
+    let errors: any;
+
+    // Если ответ в формате { message, error, ... }
+    if (typeof exceptionResponse === 'object') {
+      error = (exceptionResponse as any).error || error;
+      message = (exceptionResponse as any).message || message;
+      errors = (exceptionResponse as any).errors;
+    }
+
+    const response = {
+      success: false,
+      error: {
+        code: statusCode === 401 ? 'UNAUTHORIZED' :
+              statusCode === 409 ? 'CONFLICT' :
+              statusCode === 403 ? 'FORBIDDEN' :
+              statusCode === 404 ? 'NOT_FOUND' :
+              statusCode === 400 ? 'BAD_REQUEST' : 'ERROR',
+        message,
+        ...(errors ? { errors } : {}),
+      },
+      timestamp: new Date().toISOString(),
+      path: req.url,
+    };
+    res.status(statusCode).json(response);
+    return;
+  }
+
   // Handle AppError (our custom errors with business logic)
   if (err instanceof AppError) {
     const response = {
-      statusCode: err.statusCode,
-      message: err.message,
-      error: err.error,
-      errors: err.errors,
+      success: false,
+      error: {
+        code: err.error || 'ERROR',
+        message: err.message,
+        ...(err.errors ? { errors: err.errors } : {}),
+      },
       timestamp: new Date().toISOString(),
       path: req.url,
     };
@@ -79,10 +116,12 @@ export function errorHandler(
     const postgresError = err as any;
     // Check for unique violation (code '23505')
     if (postgresError.code === '23505') {
-      const response: ErrorResponse = {
-        statusCode: 409,
-        message: 'Resource already exists',
-        error: 'Conflict',
+      const response = {
+        success: false,
+        error: {
+          code: 'CONFLICT',
+          message: 'Resource already exists',
+        },
         timestamp: new Date().toISOString(),
         path: req.url,
       };
@@ -91,10 +130,12 @@ export function errorHandler(
     }
     // Check for foreign key violation (code '23503')
     if (postgresError.code === '23503') {
-      const response: ErrorResponse = {
-        statusCode: 400,
-        message: 'Referenced resource does not exist',
-        error: 'BadRequest',
+      const response = {
+        success: false,
+        error: {
+          code: 'BAD_REQUEST',
+          message: 'Referenced resource does not exist',
+        },
         timestamp: new Date().toISOString(),
         path: req.url,
       };
@@ -102,12 +143,14 @@ export function errorHandler(
       return;
     }
     // Generic database error
-    const response: ErrorResponse = {
-      statusCode: 500,
-      message: process.env.NODE_ENV === 'production'
-        ? 'Database error occurred'
-        : 'Database query failed',
-      error: process.env.NODE_ENV === 'development' ? 'DatabaseError' : undefined,
+    const response = {
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: process.env.NODE_ENV === 'production'
+          ? 'Database error occurred'
+          : 'Database query failed',
+      },
       timestamp: new Date().toISOString(),
       path: req.url,
     };
@@ -117,10 +160,12 @@ export function errorHandler(
 
   // Handle JWT errors
   if (err.name === 'JsonWebTokenError') {
-    const response: ErrorResponse = {
-      statusCode: 401,
-      message: 'Invalid token',
-      error: 'Unauthorized',
+    const response = {
+      success: false,
+      error: {
+        code: 'UNAUTHORIZED',
+        message: 'Invalid token',
+      },
       timestamp: new Date().toISOString(),
       path: req.url,
     };
@@ -130,10 +175,12 @@ export function errorHandler(
 
   // Handle JWT expired errors
   if (err.name === 'TokenExpiredError') {
-    const response: ErrorResponse = {
-      statusCode: 401,
-      message: 'Token has expired',
-      error: 'Unauthorized',
+    const response = {
+      success: false,
+      error: {
+        code: 'UNAUTHORIZED',
+        message: 'Token has expired',
+      },
       timestamp: new Date().toISOString(),
       path: req.url,
     };
@@ -143,10 +190,12 @@ export function errorHandler(
 
   // Handle validation errors
   if (err.name === 'ValidationError') {
-    const response: ErrorResponse = {
-      statusCode: 400,
-      message: 'Validation failed',
-      error: 'BadRequest',
+    const response = {
+      success: false,
+      error: {
+        code: 'BAD_REQUEST',
+        message: 'Validation failed',
+      },
       timestamp: new Date().toISOString(),
       path: req.url,
     };
@@ -155,12 +204,14 @@ export function errorHandler(
   }
 
   // Default error handler (generic server error)
-  const response: ErrorResponse = {
-    statusCode: 500,
-    message: process.env.NODE_ENV === 'production'
-      ? 'An unexpected error occurred'
-      : err.message || 'Unknown error occurred',
-    error: process.env.NODE_ENV === 'development' ? 'InternalServerError' : undefined,
+  const response = {
+    success: false,
+    error: {
+      code: 'INTERNAL_ERROR',
+      message: process.env.NODE_ENV === 'production'
+        ? 'An unexpected error occurred'
+        : err.message || 'Unknown error occurred',
+    },
     timestamp: new Date().toISOString(),
     path: req.url,
   };

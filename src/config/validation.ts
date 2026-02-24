@@ -8,7 +8,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ValidationError, validate } from 'class-validator';
 import { plainToInstance, ClassConstructor } from 'class-transformer';
-import { ErrorResponse } from '../middleware/error-handler';
 
 /**
  * Validation error response format
@@ -41,13 +40,15 @@ export function validateDto<T extends object>(
     if (errors.length > 0) {
       const formattedErrors = formatValidationErrors(errors);
 
-      const response: ErrorResponse = {
-        statusCode: 400,
-        message: 'Validation failed',
-        error: 'ValidationError',
-        errors: (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') ? formattedErrors : undefined,
-        timestamp: new Date().toISOString(),
+      const response = {
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Validation failed',
+          errors: (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') ? formattedErrors : undefined,
+        },
         path: req.url,
+        timestamp: new Date().toISOString(),
       };
 
       res.status(400).json(response);
@@ -82,12 +83,14 @@ export function validateQuery<T extends object>(
       const formattedErrors = formatValidationErrors(errors);
 
       res.status(400).json({
-        statusCode: 400,
-        message: 'Query validation failed',
-        error: 'ValidationError',
-        errors: formattedErrors,
-        timestamp: new Date().toISOString(),
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Query validation failed',
+          errors: formattedErrors,
+        },
         path: req.url,
+        timestamp: new Date().toISOString(),
       });
       return;
     }
@@ -119,12 +122,14 @@ export function validateParams<T extends object>(
       const formattedErrors = formatValidationErrors(errors);
 
       res.status(400).json({
-        statusCode: 400,
-        message: 'Params validation failed',
-        error: 'ValidationError',
-        errors: formattedErrors,
-        timestamp: new Date().toISOString(),
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Params validation failed',
+          errors: formattedErrors,
+        },
         path: req.url,
+        timestamp: new Date().toISOString(),
       });
       return;
     }

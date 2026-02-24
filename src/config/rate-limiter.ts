@@ -6,13 +6,14 @@
  * - API endpoints: 100 requests/minute per user
  */
 
-import rateLimit from 'express-rate-limit';
+import rateLimit, { MemoryStore } from 'express-rate-limit';
 
 /**
  * Rate limiter for authentication endpoints
  * Stricter limit to prevent brute force attacks
  */
 export const authRateLimiter = rateLimit({
+  store: new MemoryStore(),
   windowMs: 60 * 1000, // 1 минута
   max: 10, // Максимум 10 запросов
   message: {
@@ -23,6 +24,7 @@ export const authRateLimiter = rateLimit({
   standardHeaders: true, // Возвращать заголовки RateLimit-* в response
   legacyHeaders: false, // Отключить устаревшие заголовки X-RateLimit-*
   skipSuccessfulRequests: false, // Считать все запросы, включая успешные
+  // Не указываем keyGenerator - используем стандартный который правильно обрабатывает IPv6
 });
 
 /**
@@ -30,6 +32,7 @@ export const authRateLimiter = rateLimit({
  * Higher limit for authenticated users
  */
 export const apiRateLimiter = rateLimit({
+  store: new MemoryStore(),
   windowMs: 60 * 1000, // 1 минута
   max: 100, // Максимум 100 запросов
   message: {
@@ -40,10 +43,17 @@ export const apiRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: false,
+  // Отключаем rate limiting в тестовой среде
+  skip: () => process.env.NODE_ENV === 'test',
   // Ключом будет пользовательский ID из req.user.id (если аутентифицирован)
   // или IP адрес (если не аутентифицирован)
   keyGenerator: (req: any) => {
-    return req.user?.id || req.ip;
+    // Для authenticated пользователей используем ID, иначе IP
+    if (req.user?.id) {
+      return req.user.id;
+    }
+    // Используем req.ip который express уже нормализовал
+    return req.ip;
   },
 });
 
