@@ -18,6 +18,7 @@ import { createAuthenticateMiddleware } from '../middleware/authenticate';
 import { authRateLimiterMiddleware } from '../middleware/auth-rate-limit';
 import { BaseController } from './base.controller';
 import { validateDto } from '../config/validation';
+import { DataSource } from 'typeorm';
 
 /**
  * T036: Контроллер аутентификации
@@ -26,9 +27,9 @@ import { validateDto } from '../config/validation';
 export class AuthController extends BaseController {
   private router = Router();
   private authService: AuthService;
-  private dataSource: any;
+  private dataSource: DataSource;
 
-  constructor(authService: AuthService, dataSource: any) {
+  constructor(authService: AuthService, dataSource: DataSource) {
     super();
     this.authService = authService;
     this.dataSource = dataSource;
@@ -48,7 +49,9 @@ export class AuthController extends BaseController {
         const registerDto: RegisterDto = req.body;
         const result = await this.authService.register(registerDto);
 
-        return res.status(201).json(this.success(result, 'Пользователь успешно зарегистрирован'));
+        return res
+          .status(201)
+          .json(this.success(result, 'Пользователь успешно зарегистрирован'));
       })
     );
 
@@ -79,7 +82,9 @@ export class AuthController extends BaseController {
         const refreshTokenDto: RefreshTokenDto = req.body;
         const result = await this.authService.refresh(refreshTokenDto);
 
-        return res.status(200).json(this.success(result, 'Токен успешно обновлён'));
+        return res
+          .status(200)
+          .json(this.success(result, 'Токен успешно обновлён'));
       })
     );
 

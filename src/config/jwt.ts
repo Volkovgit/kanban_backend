@@ -29,8 +29,11 @@ export interface TokenPair {
 }
 
 // JWT configuration
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key-change-in-production';
+const JWT_SECRET =
+  process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_REFRESH_SECRET =
+  process.env.JWT_REFRESH_SECRET ||
+  'your-refresh-secret-key-change-in-production';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 const BCRYPT_SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS || '10', 10);
@@ -46,22 +49,18 @@ function generateJti(): string {
  * Generate an access token for a user
  */
 export function generateAccessToken(userId: string, email: string): string {
-  return jwt.sign(
-    { userId, email, jti: generateJti() },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN } as jwt.SignOptions
-  );
+  return jwt.sign({ userId, email, jti: generateJti() }, JWT_SECRET, {
+    expiresIn: JWT_EXPIRES_IN,
+  } as jwt.SignOptions);
 }
 
 /**
  * Generate a refresh token for a user
  */
 export function generateRefreshToken(userId: string, email: string): string {
-  return jwt.sign(
-    { userId, email, jti: generateJti() },
-    JWT_REFRESH_SECRET,
-    { expiresIn: JWT_REFRESH_EXPIRES_IN } as jwt.SignOptions
-  );
+  return jwt.sign({ userId, email, jti: generateJti() }, JWT_REFRESH_SECRET, {
+    expiresIn: JWT_REFRESH_EXPIRES_IN,
+  } as jwt.SignOptions);
 }
 
 /**
@@ -160,7 +159,9 @@ export function getAccessTokenExpirationTime(): number {
  * Extract token from Authorization header
  * @returns Token string or null if not found
  */
-export function extractTokenFromHeader(authHeader: string | undefined): string | null {
+export function extractTokenFromHeader(
+  authHeader: string | undefined
+): string | null {
   if (!authHeader) {
     return null;
   }

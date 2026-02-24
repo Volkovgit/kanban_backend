@@ -6,7 +6,11 @@
  */
 
 import { AppError } from '../middleware/error-handler';
-import { BaseRepository, PaginationOptions, PaginationResult } from '../repositories/base.repository';
+import {
+  BaseRepository,
+  PaginationOptions,
+  PaginationResult,
+} from '../repositories/base.repository';
 import { ObjectLiteral, DeepPartial, FindOptionsWhere } from 'typeorm';
 
 /**
@@ -113,7 +117,11 @@ export abstract class BaseService<T extends ObjectLiteral> {
   async validateOwnership(_resourceId: string, _userId: string): Promise<void> {
     // Base implementation - override in child classes
     // This is a placeholder that should be overridden based on entity-specific ownership logic
-    throw new AppError(501, 'Ownership validation not implemented', 'NotImplemented');
+    throw new AppError(
+      501,
+      'Ownership validation not implemented',
+      'NotImplemented'
+    );
   }
 
   /**
@@ -131,7 +139,10 @@ export abstract class BaseService<T extends ObjectLiteral> {
    * Override in child classes to add custom validation
    * @throws AppError if validation fails
    */
-  protected async validateUpdate(_id: string, _entityData: DeepPartial<T>): Promise<void> {
+  protected async validateUpdate(
+    _id: string,
+    _entityData: DeepPartial<T>
+  ): Promise<void> {
     // Base implementation - override in child classes
     // This is a placeholder for custom validation logic
   }

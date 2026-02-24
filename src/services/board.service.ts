@@ -28,9 +28,14 @@ export class BoardService extends BaseService<Board> {
    * @param userId - ID владельца доски
    * @throws AppError если достигнут лимит досок (100 на пользователя)
    */
-  async createBoard(createBoardDto: CreateBoardDto, userId: string): Promise<Board> {
+  async createBoard(
+    createBoardDto: CreateBoardDto,
+    userId: string
+  ): Promise<Board> {
     // Проверяем лимит досок (100 на пользователя)
-    const boardCount = await (this.repository as BoardRepository).countByOwner(userId);
+    const boardCount = await (this.repository as BoardRepository).countByOwner(
+      userId
+    );
 
     if (boardCount >= 100) {
       throw new AppError(
@@ -58,7 +63,13 @@ export class BoardService extends BaseService<Board> {
   async findByOwner(
     userId: string,
     options?: { page?: number; pageSize?: number }
-  ): Promise<{ data: Board[]; total: number; page: number; pageSize: number; totalPages: number }> {
+  ): Promise<{
+    data: Board[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  }> {
     return (this.repository as BoardRepository).findByOwner(userId, options);
   }
 
@@ -69,14 +80,20 @@ export class BoardService extends BaseService<Board> {
    * @throws AppError если доска не найдена или не принадлежит пользователю
    */
   async findByIdWithOwnership(boardId: string, userId: string): Promise<Board> {
-    const board = await this.getOne({ id: boardId } as any);
+    const board = await this.getOne({
+      id: boardId,
+    } as import('typeorm').FindOptionsWhere<Board>);
 
     if (!board) {
       throw new AppError(404, 'Доска не найдена', 'BOARD_NOT_FOUND');
     }
 
     if (board.ownerId !== userId) {
-      throw new AppError(403, 'Доска принадлежит другому пользователю', 'FORBIDDEN');
+      throw new AppError(
+        403,
+        'Доска принадлежит другому пользователю',
+        'FORBIDDEN'
+      );
     }
 
     return board;
@@ -89,7 +106,11 @@ export class BoardService extends BaseService<Board> {
    * @param userId - ID пользователя
    * @throws AppError если доска не найдена или не принадлежит пользователю
    */
-  async updateBoard(boardId: string, updateBoardDto: UpdateBoardDto, userId: string): Promise<Board> {
+  async updateBoard(
+    boardId: string,
+    updateBoardDto: UpdateBoardDto,
+    userId: string
+  ): Promise<Board> {
     // Сначала проверяем владение
     await this.findByIdWithOwnership(boardId, userId);
 
@@ -118,15 +139,24 @@ export class BoardService extends BaseService<Board> {
    * @param userId - ID пользователя
    * @throws AppError если доска не принадлежит пользователю
    */
-  override async validateOwnership(boardId: string, userId: string): Promise<void> {
-    const board = await this.getOne({ id: boardId } as any);
+  override async validateOwnership(
+    boardId: string,
+    userId: string
+  ): Promise<void> {
+    const board = await this.getOne({
+      id: boardId,
+    } as import('typeorm').FindOptionsWhere<Board>);
 
     if (!board) {
       throw new AppError(404, 'Доска не найдена', 'BOARD_NOT_FOUND');
     }
 
     if (board.ownerId !== userId) {
-      throw new AppError(403, 'Доска принадлежит другому пользователю', 'FORBIDDEN');
+      throw new AppError(
+        403,
+        'Доска принадлежит другому пользователю',
+        'FORBIDDEN'
+      );
     }
   }
 
@@ -138,7 +168,9 @@ export class BoardService extends BaseService<Board> {
    */
   async checkOwnership(boardId: string, userId: string): Promise<boolean> {
     try {
-      const board = await this.getOne({ id: boardId } as any);
+      const board = await this.getOne({
+        id: boardId,
+      } as import('typeorm').FindOptionsWhere<Board>);
 
       if (!board) {
         return false;
@@ -156,7 +188,9 @@ export class BoardService extends BaseService<Board> {
    * @returns true если лимит не превышен, иначе false
    */
   async isUnderLimit(userId: string): Promise<boolean> {
-    const count = await (this.repository as BoardRepository).countByOwner(userId);
+    const count = await (this.repository as BoardRepository).countByOwner(
+      userId
+    );
     return count < 100;
   }
 }

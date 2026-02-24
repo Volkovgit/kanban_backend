@@ -1,4 +1,10 @@
-import { MigrationInterface, QueryRunner, TableColumn, TableForeignKey, TableIndex } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  TableColumn,
+  TableForeignKey,
+  TableIndex,
+} from 'typeorm';
 
 export class UpdateTaskWithBoard1708759800000 implements MigrationInterface {
   name = 'UpdateTaskWithBoard1708759800000';

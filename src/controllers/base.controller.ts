@@ -41,11 +41,18 @@ export abstract class BaseController {
   /**
    * Send a success response (новая версия без res)
    */
-  protected success<T>(data: T, message?: string): { success: boolean; data: T; message?: string };
+  protected success<T>(
+    data: T,
+    message?: string
+  ): { success: boolean; data: T; message?: string };
 
-  protected success<T>(resOrData: Response | T, dataOrMessage?: T | string, statusCode?: number): any {
+  protected success<T>(
+    resOrData: Response | T,
+    dataOrMessage?: T | string,
+    statusCode?: number
+  ): Response | { success: boolean; data: T; message?: string } {
     // Если первый параметр - Response, используем старый формат
-    if (resOrData && typeof (resOrData as any).status === 'function') {
+    if (resOrData && typeof (resOrData as Response).status === 'function') {
       const res = resOrData as Response;
       const data = dataOrMessage as T;
       const code = statusCode as number | undefined;
@@ -64,7 +71,7 @@ export abstract class BaseController {
     };
 
     if (message) {
-      (response as any).message = message;
+      response.message = message;
     }
 
     return response;
@@ -80,7 +87,12 @@ export abstract class BaseController {
   /**
    * Send an error response
    */
-  protected error(res: Response, statusCode: number, message: string, error?: string): Response {
+  protected error(
+    res: Response,
+    statusCode: number,
+    message: string,
+    error?: string
+  ): Response {
     const response: ErrorResponse = {
       statusCode,
       message,
@@ -132,7 +144,7 @@ export abstract class BaseController {
    * @throws AppError if user is not authenticated
    */
   protected getUserId(req: Request): string {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
 
     if (!userId) {
       throw new AppError(401, 'Unauthorized', 'Unauthorized');
@@ -145,9 +157,16 @@ export abstract class BaseController {
    * Check if user owns the resource
    * @throws AppError if user doesn't own the resource
    */
-  protected checkOwnership(resourceOwnerId: string, currentUserId: string): void {
+  protected checkOwnership(
+    resourceOwnerId: string,
+    currentUserId: string
+  ): void {
     if (resourceOwnerId !== currentUserId) {
-      throw new AppError(403, 'Forbidden', 'You do not have permission to access this resource');
+      throw new AppError(
+        403,
+        'Forbidden',
+        'You do not have permission to access this resource'
+      );
     }
   }
 
@@ -155,7 +174,10 @@ export abstract class BaseController {
    * Validate required fields in request body
    * @throws AppError if required fields are missing
    */
-  protected validateRequired(body: any, requiredFields: string[]): void {
+  protected validateRequired(
+    body: Record<string, unknown>,
+    requiredFields: string[]
+  ): void {
     const missingFields = requiredFields.filter((field) => !body[field]);
 
     if (missingFields.length > 0) {

@@ -20,7 +20,13 @@ export class BoardRepository extends BaseRepository<Board> {
   async findByOwner(
     ownerId: string,
     options?: { page?: number; pageSize?: number }
-  ): Promise<any> {
+  ): Promise<{
+    data: Board[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  }> {
     const where: FindOptionsWhere<Board> = { ownerId };
     const { page, pageSize } = options || {};
 

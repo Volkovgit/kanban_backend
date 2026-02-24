@@ -33,17 +33,27 @@ export const dbConfig: PostgresConnectionOptions & DataSourceOptions = {
   synchronize: process.env.NODE_ENV === 'development' ? true : false,
 
   // Logging
-  logging: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+  logging:
+    process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
 
   // Extra configuration
   extra: {
-    max: process.env.DB_MAX_CONNECTIONS ? parseInt(process.env.DB_MAX_CONNECTIONS, 10) : 100,
-    idleTimeoutMillis: process.env.DB_IDLE_TIMEOUT ? parseInt(process.env.DB_IDLE_TIMEOUT, 10) : 30000,
-    connectionTimeoutMillis: process.env.DB_CONNECTION_TIMEOUT ? parseInt(process.env.DB_CONNECTION_TIMEOUT, 10) : 10000,
+    max: process.env.DB_MAX_CONNECTIONS
+      ? parseInt(process.env.DB_MAX_CONNECTIONS, 10)
+      : 100,
+    idleTimeoutMillis: process.env.DB_IDLE_TIMEOUT
+      ? parseInt(process.env.DB_IDLE_TIMEOUT, 10)
+      : 30000,
+    connectionTimeoutMillis: process.env.DB_CONNECTION_TIMEOUT
+      ? parseInt(process.env.DB_CONNECTION_TIMEOUT, 10)
+      : 10000,
   },
 
   // SSL (disabled for local development, enable for production)
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl:
+    process.env.NODE_ENV === 'production'
+      ? { rejectUnauthorized: false }
+      : false,
 };
 
 /**

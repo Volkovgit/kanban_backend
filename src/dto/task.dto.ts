@@ -5,7 +5,14 @@
  * Uses class-validator for input validation.
  */
 
-import { IsString, IsNotEmpty, MaxLength, IsOptional, IsEnum, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  MaxLength,
+  IsOptional,
+  IsEnum,
+  IsUUID,
+} from 'class-validator';
 import { TaskStatus, TaskPriority } from '../enums';
 
 /**
@@ -20,14 +27,20 @@ export class CreateTaskDto {
 
   @IsString({ message: 'Task description must be a string' })
   @IsOptional()
-  @MaxLength(5000, { message: 'Task description must not exceed 5000 characters' })
+  @MaxLength(5000, {
+    message: 'Task description must not exceed 5000 characters',
+  })
   description?: string;
 
-  @IsEnum(TaskStatus, { message: 'Status must be one of: BACKLOG, TODO, IN_PROGRESS, REVIEW, DONE' })
+  @IsEnum(TaskStatus, {
+    message: 'Status must be one of: BACKLOG, TODO, IN_PROGRESS, REVIEW, DONE',
+  })
   @IsOptional()
   status?: TaskStatus;
 
-  @IsEnum(TaskPriority, { message: 'Priority must be one of: LOW, MEDIUM, HIGH, CRITICAL' })
+  @IsEnum(TaskPriority, {
+    message: 'Priority must be one of: LOW, MEDIUM, HIGH, CRITICAL',
+  })
   @IsOptional()
   priority?: TaskPriority;
 
@@ -50,14 +63,20 @@ export class UpdateTaskDto {
 
   @IsString({ message: 'Task description must be a string' })
   @IsOptional()
-  @MaxLength(5000, { message: 'Task description must not exceed 5000 characters' })
+  @MaxLength(5000, {
+    message: 'Task description must not exceed 5000 characters',
+  })
   description?: string;
 
-  @IsEnum(TaskStatus, { message: 'Status must be one of: BACKLOG, TODO, IN_PROGRESS, REVIEW, DONE' })
+  @IsEnum(TaskStatus, {
+    message: 'Status must be one of: BACKLOG, TODO, IN_PROGRESS, REVIEW, DONE',
+  })
   @IsOptional()
   status?: TaskStatus;
 
-  @IsEnum(TaskPriority, { message: 'Priority must be one of: LOW, MEDIUM, HIGH, CRITICAL' })
+  @IsEnum(TaskPriority, {
+    message: 'Priority must be one of: LOW, MEDIUM, HIGH, CRITICAL',
+  })
   @IsOptional()
   priority?: TaskPriority;
 }

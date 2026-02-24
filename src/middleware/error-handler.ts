@@ -45,7 +45,10 @@ export class AppError extends Error {
 /**
  * Maps HTTP status codes to standard error codes
  */
-const getErrorCode = (status: number, defaultCode: string = 'ERROR'): string => {
+const getErrorCode = (
+  status: number,
+  defaultCode: string = 'ERROR'
+): string => {
   const codes: Record<number, string> = {
     400: 'BAD_REQUEST',
     401: 'UNAUTHORIZED',
@@ -81,9 +84,12 @@ export function errorHandler(
   }
 
   // Helper to attach correlation ID
-  const sendResponse = (statusCode: number, responseObj: any) => {
+  const sendResponse = (
+    statusCode: number,
+    responseObj: Record<string, unknown>
+  ) => {
     const correlationId = req.headers['x-correlation-id'];
-    if (correlationId) {
+    if (correlationId && typeof correlationId === 'string') {
       responseObj.correlationId = correlationId;
     }
     res.status(statusCode).json(responseObj);
@@ -94,14 +100,13 @@ export function errorHandler(
     const statusCode = err.getStatus();
     const exceptionResponse = err.getResponse();
 
-    let error = 'Error';
     let message = err.message;
-    let errors: any;
+    let errors: unknown;
 
-    if (typeof exceptionResponse === 'object') {
-      error = (exceptionResponse as any).error || error;
-      message = (exceptionResponse as any).message || message;
-      errors = (exceptionResponse as any).errors;
+    if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+      const responseRecord = exceptionResponse as Record<string, unknown>;
+      message = (responseRecord.message as string) || message;
+      errors = responseRecord.errors;
     }
 
     const response = {
@@ -136,7 +141,7 @@ export function errorHandler(
 
   // Handle TypeORM unique constraint violations
   if (err.name === 'QueryFailedError') {
-    const postgresError = err as any;
+    const postgresError = err as Error & { code?: string };
     // Check for unique violation (code '23505')
     if (postgresError.code === '23505') {
       const response = {
@@ -170,9 +175,10 @@ export function errorHandler(
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message: process.env.NODE_ENV === 'production'
-          ? 'Database error occurred'
-          : 'Database query failed',
+        message:
+          process.env.NODE_ENV === 'production'
+            ? 'Database error occurred'
+            : 'Database query failed',
       },
       timestamp: new Date().toISOString(),
       path: req.url,
@@ -231,9 +237,10 @@ export function errorHandler(
     success: false,
     error: {
       code: 'INTERNAL_ERROR',
-      message: process.env.NODE_ENV === 'production'
-        ? 'An unexpected error occurred'
-        : err.message || 'Unknown error occurred',
+      message:
+        process.env.NODE_ENV === 'production'
+          ? 'An unexpected error occurred'
+          : err.message || 'Unknown error occurred',
     },
     timestamp: new Date().toISOString(),
     path: req.url,
@@ -246,7 +253,13 @@ export function errorHandler(
  * Async handler wrapper to catch errors in async route handlers
  * Usage: wrapAsync(async (req, res, next) => { ... })
  */
-export function wrapAsync(fn: Function) {
+export function wrapAsync(
+  fn: (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => Promise<unknown> | void
+) {
   return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };

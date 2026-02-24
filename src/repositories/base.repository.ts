@@ -5,7 +5,13 @@
  * Wraps TypeORM repository with standard CRUD operations and common queries.
  */
 
-import { ObjectLiteral, Repository, FindOptionsWhere, DataSource, DeepPartial } from 'typeorm';
+import {
+  ObjectLiteral,
+  Repository,
+  FindOptionsWhere,
+  DataSource,
+  DeepPartial,
+} from 'typeorm';
 import { AppError } from '../middleware/error-handler';
 
 /**
@@ -78,7 +84,8 @@ export abstract class BaseRepository<T extends ObjectLiteral> {
    */
   async findById(id: string): Promise<T> {
     // Validate UUID format before database query
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(id)) {
       throw new AppError(404, 'Resource not found', 'NotFound');
     }
@@ -167,8 +174,14 @@ export abstract class BaseRepository<T extends ObjectLiteral> {
   /**
    * Update entities by conditions
    */
-  async updateMany(where: FindOptionsWhere<T>, entityData: DeepPartial<T>): Promise<void> {
-    await this.repository.update(where, entityData as DeepPartial<any>);
+  async updateMany(
+    where: FindOptionsWhere<T>,
+    entityData: DeepPartial<T>
+  ): Promise<void> {
+    await this.repository.update(
+      where,
+      entityData as import('typeorm/query-builder/QueryPartialEntity').QueryDeepPartialEntity<T>
+    );
   }
 
   /**
@@ -186,10 +199,12 @@ export abstract class BaseRepository<T extends ObjectLiteral> {
    * @throws AppError if entity not found
    */
   async deleteInTransaction(id: string): Promise<void> {
-    await this.repository.manager.transaction(async (transactionalEntityManager) => {
-      const entity = await this.findById(id);
-      await transactionalEntityManager.remove(entity);
-    });
+    await this.repository.manager.transaction(
+      async (transactionalEntityManager) => {
+        const entity = await this.findById(id);
+        await transactionalEntityManager.remove(entity);
+      }
+    );
   }
 
   /**
@@ -197,9 +212,11 @@ export abstract class BaseRepository<T extends ObjectLiteral> {
    * Useful for cascade delete operations
    */
   async deleteManyInTransaction(where: FindOptionsWhere<T>): Promise<void> {
-    await this.repository.manager.transaction(async (transactionalEntityManager) => {
-      await transactionalEntityManager.delete(this.entity, where);
-    });
+    await this.repository.manager.transaction(
+      async (transactionalEntityManager) => {
+        await transactionalEntityManager.delete(this.entity, where);
+      }
+    );
   }
 
   /**
@@ -214,7 +231,9 @@ export abstract class BaseRepository<T extends ObjectLiteral> {
    * @throws AppError if entity not found or doesn't support soft delete
    */
   async softDelete(id: string): Promise<void> {
-    const result = await this.repository.softDelete({ id } as unknown as FindOptionsWhere<T>);
+    const result = await this.repository.softDelete({
+      id,
+    } as unknown as FindOptionsWhere<T>);
 
     if (result.affected === 0) {
       throw new AppError(404, 'Resource not found', 'NotFound');
@@ -226,7 +245,9 @@ export abstract class BaseRepository<T extends ObjectLiteral> {
    * @throws AppError if entity not found
    */
   async restore(id: string): Promise<void> {
-    const result = await this.repository.restore({ id } as unknown as FindOptionsWhere<T>);
+    const result = await this.repository.restore({
+      id,
+    } as unknown as FindOptionsWhere<T>);
 
     if (result.affected === 0) {
       throw new AppError(404, 'Resource not found', 'NotFound');

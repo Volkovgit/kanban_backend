@@ -15,6 +15,8 @@ import { CreateTaskDto } from '../dto/task/create-task.dto';
 import { UpdateTaskDto } from '../dto/task/update-task.dto';
 import { wrapAsync } from '../middleware/error-handler';
 import { createAuthenticateMiddleware } from '../middleware/authenticate';
+import { DataSource } from 'typeorm';
+import { TaskStatus, TaskPriority } from '../models/task.entity';
 import { BaseController } from './base.controller';
 import { validateDto } from '../config/validation';
 
@@ -25,9 +27,9 @@ import { validateDto } from '../config/validation';
 export class TaskController extends BaseController {
   private router = Router();
   private taskService: TaskService;
-  private dataSource: any;
+  private dataSource: DataSource;
 
-  constructor(taskService: TaskService, dataSource: any) {
+  constructor(taskService: TaskService, dataSource: DataSource) {
     super();
     this.taskService = taskService;
     this.dataSource = dataSource;
@@ -51,8 +53,8 @@ export class TaskController extends BaseController {
         const result = await this.taskService.findByBoard(boardId, userId, {
           page,
           pageSize,
-          status: status as any,
-          priority: priority as any,
+          status: status as TaskStatus,
+          priority: priority as TaskPriority,
         });
 
         // Устанавливаем заголовки пагинации
@@ -86,7 +88,9 @@ export class TaskController extends BaseController {
 
         const task = await this.taskService.createTask(taskData, userId);
 
-        return res.status(201).json(this.success(task, 'Задача успешно создана'));
+        return res
+          .status(201)
+          .json(this.success(task, 'Задача успешно создана'));
       })
     );
 
@@ -120,9 +124,15 @@ export class TaskController extends BaseController {
         const taskId = req.params.id;
         const updateTaskDto: UpdateTaskDto = req.body;
 
-        const task = await this.taskService.updateTask(taskId, updateTaskDto, userId);
+        const task = await this.taskService.updateTask(
+          taskId,
+          updateTaskDto,
+          userId
+        );
 
-        return res.status(200).json(this.success(task, 'Задача успешно обновлена'));
+        return res
+          .status(200)
+          .json(this.success(task, 'Задача успешно обновлена'));
       })
     );
 
@@ -139,7 +149,9 @@ export class TaskController extends BaseController {
 
         await this.taskService.deleteTask(taskId, userId);
 
-        return res.status(200).json(this.success(null, 'Задача успешно удалена'));
+        return res
+          .status(200)
+          .json(this.success(null, 'Задача успешно удалена'));
       })
     );
   }

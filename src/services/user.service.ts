@@ -107,7 +107,10 @@ export class UserService {
    */
   async setRefreshToken(userId: string, refreshToken: string): Promise<void> {
     // Хешируем refresh токен перед сохранением
-    const hashedToken = await bcrypt.hash(refreshToken, this.BCRYPT_SALT_ROUNDS);
+    const hashedToken = await bcrypt.hash(
+      refreshToken,
+      this.BCRYPT_SALT_ROUNDS
+    );
     await this.userRepository.setRefreshToken(userId, hashedToken);
   }
 
@@ -125,7 +128,10 @@ export class UserService {
    * @param refreshToken - Refresh токен для проверки
    * @returns True если токен валиден
    */
-  async verifyRefreshToken(userId: string, refreshToken: string): Promise<boolean> {
+  async verifyRefreshToken(
+    userId: string,
+    refreshToken: string
+  ): Promise<boolean> {
     const user = await this.userRepository.findById(userId);
 
     if (!user || !user.refreshToken) {

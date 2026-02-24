@@ -17,6 +17,7 @@ import { wrapAsync } from '../middleware/error-handler';
 import { createAuthenticateMiddleware } from '../middleware/authenticate';
 import { validateBoardOwnership } from '../middleware/validate-board-ownership';
 import { BaseController } from './base.controller';
+import { DataSource } from 'typeorm';
 import { validateDto } from '../config/validation';
 
 /**
@@ -26,9 +27,9 @@ import { validateDto } from '../config/validation';
 export class BoardController extends BaseController {
   private router = Router();
   private boardService: BoardService;
-  private dataSource: any;
+  private dataSource: DataSource;
 
-  constructor(boardService: BoardService, dataSource: any) {
+  constructor(boardService: BoardService, dataSource: DataSource) {
     super();
     this.boardService = boardService;
     this.dataSource = dataSource;
@@ -47,7 +48,10 @@ export class BoardController extends BaseController {
         const userId = this.getUserId(req);
         const { page, pageSize } = this.getPaginationParams(req);
 
-        const result = await this.boardService.findByOwner(userId, { page, pageSize });
+        const result = await this.boardService.findByOwner(userId, {
+          page,
+          pageSize,
+        });
 
         // Устанавливаем заголовки пагинации
         res.setHeader('X-Total-Count', result.total.toString());
@@ -71,9 +75,14 @@ export class BoardController extends BaseController {
         const userId = this.getUserId(req);
         const createBoardDto: CreateBoardDto = req.body;
 
-        const board = await this.boardService.createBoard(createBoardDto, userId);
+        const board = await this.boardService.createBoard(
+          createBoardDto,
+          userId
+        );
 
-        return res.status(201).json(this.success(board, 'Доска успешно создана'));
+        return res
+          .status(201)
+          .json(this.success(board, 'Доска успешно создана'));
       })
     );
 
@@ -107,9 +116,15 @@ export class BoardController extends BaseController {
         const boardId = req.params.id;
         const updateBoardDto: UpdateBoardDto = req.body;
 
-        const board = await this.boardService.updateBoard(boardId, updateBoardDto, userId);
+        const board = await this.boardService.updateBoard(
+          boardId,
+          updateBoardDto,
+          userId
+        );
 
-        return res.status(200).json(this.success(board, 'Доска успешно обновлена'));
+        return res
+          .status(200)
+          .json(this.success(board, 'Доска успешно обновлена'));
       })
     );
 
@@ -127,7 +142,9 @@ export class BoardController extends BaseController {
 
         await this.boardService.deleteBoard(boardId, userId);
 
-        return res.status(200).json(this.success(null, 'Доска успешно удалена'));
+        return res
+          .status(200)
+          .json(this.success(null, 'Доска успешно удалена'));
       })
     );
   }

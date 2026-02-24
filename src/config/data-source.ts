@@ -56,5 +56,3 @@ export async function closeDatabase(): Promise<void> {
 export function isDatabaseConnected(): boolean {
   return AppDataSource.isInitialized;
 }
-
-

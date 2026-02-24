@@ -6,7 +6,15 @@
  * Includes account lockout mechanism after failed login attempts.
  */
 
-import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, Generated } from 'typeorm';
+import {
+  Entity,
+  PrimaryColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+  Generated,
+} from 'typeorm';
 import { Exclude } from 'class-transformer';
 // import { Project } from './project.entity';
 import { Board } from './board.entity';

@@ -20,7 +20,7 @@ export class TaskService extends BaseService<Task> {
     private taskRepository: TaskRepository,
     private boardRepository: BoardRepository
   ) {
-    super(taskRepository as any);
+    super(taskRepository);
   }
 
   /**
@@ -42,11 +42,15 @@ export class TaskService extends BaseService<Task> {
     // Check board task limit (1000 tasks per board)
     const taskCount = await this.taskRepository.countByBoard(boardId);
     if (taskCount >= 1000) {
-      throw new AppError(429, 'Достигнут лимит задач (максимум 1000 на доску)', 'TASK_LIMIT_EXCEEDED');
+      throw new AppError(
+        429,
+        'Достигнут лимит задач (максимум 1000 на доску)',
+        'TASK_LIMIT_EXCEEDED'
+      );
     }
 
     // Create task with default values
-    const taskData: any = {
+    const taskData: Partial<Task> = {
       title,
       description: description || null,
       status: status || TaskStatus.BACKLOG,
@@ -60,7 +64,11 @@ export class TaskService extends BaseService<Task> {
   /**
    * Update task with ownership validation
    */
-  async updateTask(taskId: string, updateDto: UpdateTaskDto, userId: string): Promise<Task> {
+  async updateTask(
+    taskId: string,
+    updateDto: UpdateTaskDto,
+    userId: string
+  ): Promise<Task> {
     const task = await this.taskRepository.findById(taskId);
 
     // Validate board ownership
@@ -90,12 +98,22 @@ export class TaskService extends BaseService<Task> {
   /**
    * Find all tasks for a board with filters
    */
-  async findByBoard(boardId: string, userId: string, options?: {
-    status?: TaskStatus;
-    priority?: TaskPriority;
-    page?: number;
-    pageSize?: number;
-  }): Promise<any> {
+  async findByBoard(
+    boardId: string,
+    userId: string,
+    options?: {
+      status?: TaskStatus;
+      priority?: TaskPriority;
+      page?: number;
+      pageSize?: number;
+    }
+  ): Promise<{
+    data: Task[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  }> {
     // Validate board ownership
     const board = await this.boardRepository.findOne({ id: boardId });
     if (!board || board.ownerId !== userId) {
@@ -123,7 +141,10 @@ export class TaskService extends BaseService<Task> {
   /**
    * Validate board ownership
    */
-  async validateBoardOwnership(taskId: string, userId: string): Promise<boolean> {
+  async validateBoardOwnership(
+    taskId: string,
+    userId: string
+  ): Promise<boolean> {
     const task = await this.taskRepository.findById(taskId);
     const board = await this.boardRepository.findOne({ id: task.boardId });
     return board ? board.ownerId === userId : false;

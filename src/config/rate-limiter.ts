@@ -7,6 +7,8 @@
  */
 
 import rateLimit, { MemoryStore } from 'express-rate-limit';
+import { Request } from 'express';
+import '../middleware/authenticate'; // ensure Express.Request has user property for authentication endpoints
 
 /**
  * Rate limiter for authentication endpoints
@@ -47,13 +49,13 @@ export const apiRateLimiter = rateLimit({
   skip: () => process.env.NODE_ENV === 'test',
   // Ключом будет пользовательский ID из req.user.id (если аутентифицирован)
   // или IP адрес (если не аутентифицирован)
-  keyGenerator: (req: any) => {
+  keyGenerator: (req: Request) => {
     // Для authenticated пользователей используем ID, иначе IP
     if (req.user?.id) {
       return req.user.id;
     }
-    // Используем req.ip который express уже нормализовал
-    return req.ip;
+    // Используем req.ip который express    // Fallback to IP address if available, otherwise a default string
+    return req.ip || req.connection?.remoteAddress || 'unknown';
   },
 });
 

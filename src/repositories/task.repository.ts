@@ -20,7 +20,12 @@ export class TaskRepository extends BaseRepository<Task> {
    */
   async findByBoardId(
     boardId: string,
-    options?: { status?: TaskStatus; priority?: TaskPriority; page?: number; pageSize?: number }
+    options?: {
+      status?: TaskStatus;
+      priority?: TaskPriority;
+      page?: number;
+      pageSize?: number;
+    }
   ): Promise<PaginationResult<Task>> {
     const { status, priority, page, pageSize } = options || {};
 
@@ -71,10 +76,7 @@ export class TaskRepository extends BaseRepository<Task> {
   /**
    * Find tasks by status
    */
-  async findByStatus(
-    boardId: string,
-    status: TaskStatus
-  ): Promise<Task[]> {
+  async findByStatus(boardId: string, status: TaskStatus): Promise<Task[]> {
     return this.findMany({ boardId, status });
   }
 
@@ -96,10 +98,9 @@ export class TaskRepository extends BaseRepository<Task> {
       .createQueryBuilder('task')
       .leftJoin('task.board', 'board')
       .where('board.ownerId = :userId', { userId })
-      .andWhere(
-        '(task.title ILIKE :query OR task.description ILIKE :query)',
-        { query: `%${query}%` }
-      )
+      .andWhere('(task.title ILIKE :query OR task.description ILIKE :query)', {
+        query: `%${query}%`,
+      })
       .orderBy('task.createdAt', 'DESC')
       .getMany();
   }

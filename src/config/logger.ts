@@ -12,16 +12,22 @@ const { combine, timestamp, printf, colorize, json } = format;
 
 // Format to redact sensitive information
 const redactSensitive = format((info) => {
-  const sanitize = (obj: any): any => {
+  const sanitize = (obj: Record<string, unknown>): Record<string, unknown> => {
     if (!obj || typeof obj !== 'object') return obj;
-    if (Array.isArray(obj)) return obj.map(sanitize);
+    if (Array.isArray(obj))
+      return obj.map((item) =>
+        sanitize(item as Record<string, unknown>)
+      ) as unknown as Record<string, unknown>;
 
-    const result: any = {};
+    const result: Record<string, unknown> = {};
     for (const key in obj) {
-      if (key.toLowerCase().includes('password') || key.toLowerCase().includes('token')) {
+      if (
+        key.toLowerCase().includes('password') ||
+        key.toLowerCase().includes('token')
+      ) {
         result[key] = '[REDACTED]';
       } else {
-        result[key] = sanitize(obj[key]);
+        result[key] = sanitize(obj[key] as Record<string, unknown>);
       }
     }
     return result;
@@ -29,11 +35,15 @@ const redactSensitive = format((info) => {
 
   // Redact properties in the info object
   for (const key of Object.keys(info)) {
-    if (key === 'level' || key === 'message' || typeof key === 'symbol') continue;
-    if (key.toLowerCase().includes('password') || key.toLowerCase().includes('token')) {
+    if (key === 'level' || key === 'message' || typeof key === 'symbol')
+      continue;
+    if (
+      key.toLowerCase().includes('password') ||
+      key.toLowerCase().includes('token')
+    ) {
       info[key] = '[REDACTED]';
     } else if (typeof info[key] === 'object' && info[key] !== null) {
-      info[key] = sanitize(info[key]);
+      info[key] = sanitize(info[key] as Record<string, unknown>);
     }
   }
   return info;
@@ -41,8 +51,11 @@ const redactSensitive = format((info) => {
 
 // Custom log format for development
 const devLogFormat = printf(({ level, message, timestamp, ...metadata }) => {
-  const correlationId = metadata.correlationId ? `[${metadata.correlationId}]` : '';
-  const metaStr = Object.keys(metadata).length > 0 ? JSON.stringify(metadata) : '';
+  const correlationId = metadata.correlationId
+    ? `[${metadata.correlationId}]`
+    : '';
+  const metaStr =
+    Object.keys(metadata).length > 0 ? JSON.stringify(metadata) : '';
   return `${timestamp as string} [${level}]${correlationId}: ${message} ${metaStr}`;
 });
 
@@ -52,10 +65,14 @@ const devLogFormat = printf(({ level, message, timestamp, ...metadata }) => {
 export const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: combine(
-    process.env.NODE_ENV === 'production' ? redactSensitive() : redactSensitive(),
+    process.env.NODE_ENV === 'production'
+      ? redactSensitive()
+      : redactSensitive(),
     timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     // Use different formats based on environment
-    process.env.NODE_ENV === 'production' ? json() : combine(colorize({ all: true }), devLogFormat)
+    process.env.NODE_ENV === 'production'
+      ? json()
+      : combine(colorize({ all: true }), devLogFormat)
   ),
   transports: [
     // Console transport with colors
@@ -77,7 +94,7 @@ export const logger = winston.createLogger({
  * @param correlationId - Optional correlation ID for request tracing
  */
 export function createModuleLogger(moduleName: string, correlationId?: string) {
-  const metadata: any = { module: moduleName };
+  const metadata: Record<string, unknown> = { module: moduleName };
   if (correlationId) {
     metadata.correlationId = correlationId;
   }

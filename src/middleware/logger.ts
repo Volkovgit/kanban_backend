@@ -11,11 +11,9 @@ import { logger } from '../config/logger';
 /**
  * Extend Express Request type to track start time
  */
-declare global {
-  namespace Express {
-    interface Request {
-      startTime?: number;
-    }
+declare module 'express' {
+  interface Request {
+    startTime?: number;
   }
 }
 
@@ -23,7 +21,11 @@ declare global {
  * Request logging middleware
  * Logs each request with method, URL, status code, and response time
  */
-export function requestLogger(req: Request, res: Response, next: NextFunction): void {
+export function requestLogger(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
   // Record start time for response time calculation
   req.startTime = Date.now();
 
@@ -59,7 +61,11 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
  * Create a simpler request logger for development
  * Only logs method and URL without response tracking
  */
-export function simpleRequestLogger(req: Request, _res: Response, next: NextFunction): void {
+export function simpleRequestLogger(
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): void {
   logger.info(`${req.method} ${req.url}`);
   next();
 }

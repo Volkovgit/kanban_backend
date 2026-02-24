@@ -5,21 +5,24 @@
  * Присоединяет decoded user к req.user.
  */
 
-import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NestMiddleware,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { DataSource } from 'typeorm';
+import * as jwt from 'jsonwebtoken';
 
 /**
  * Расширение интерфейса Request для включения user
  */
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        login: string;
-      };
-    }
+declare module 'express' {
+  interface Request {
+    user?: {
+      id: string;
+      login: string;
+    };
   }
 }
 
@@ -43,14 +46,16 @@ export class AuthenticateMiddleware implements NestMiddleware {
     // Проверяем формат "Bearer <token>"
     const parts = authHeader.split(' ');
     if (parts.length !== 2 || parts[0] !== 'Bearer') {
-      throw new UnauthorizedException('Невалидный формат Authorization заголовка. Ожидается: Bearer <token>');
+      throw new UnauthorizedException(
+        'Невалидный формат Authorization заголовка. Ожидается: Bearer <token>'
+      );
     }
 
     const token = parts[1];
 
     try {
       // Динамический импорт для избежания circular dependency
-      const jwt = require('jsonwebtoken');
+      // const jwt = require('jsonwebtoken');
       const secret = process.env.JWT_SECRET || 'your-secret-key';
 
       const payload = jwt.verify(token, secret) as {
@@ -102,7 +107,7 @@ export function createAuthenticateMiddleware(_dataSource: DataSource) {
 
     try {
       // Динамический импорт для избежания circular dependency
-      const jwt = require('jsonwebtoken');
+      // const jwt = require('jsonwebtoken');
       const secret = process.env.JWT_SECRET || 'your-secret-key';
 
       const payload = jwt.verify(token, secret) as {

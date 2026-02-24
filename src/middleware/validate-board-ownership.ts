@@ -13,11 +13,9 @@ import { Board } from '../models/board.entity';
 /**
  * Расширение типа Express Request для включения проверенной доски
  */
-declare global {
-  namespace Express {
-    interface Request {
-      board?: Board;
-    }
+declare module 'express' {
+  interface Request {
+    board?: Board;
   }
 }
 
@@ -52,7 +50,11 @@ export function validateBoardOwnership(
   boardService: BoardService,
   paramKey: string = 'id'
 ) {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       // Убеждаемся, что пользователь аутентифицирован
       if (!req.user) {
@@ -63,11 +65,16 @@ export function validateBoardOwnership(
       const boardId = req.params[paramKey];
 
       if (!boardId) {
-        throw new AppError(400, `Параметр ID доски '${paramKey}' обязателен`, 'BadRequest');
+        throw new AppError(
+          400,
+          `Параметр ID доски '${paramKey}' обязателен`,
+          'BadRequest'
+        );
       }
 
       // Проверяем формат UUID
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (!uuidRegex.test(boardId)) {
         throw new AppError(400, 'Неверный формат ID доски', 'BadRequest');
       }
@@ -92,7 +99,10 @@ export function validateBoardOwnership(
           },
         });
       } else {
-        const message = error instanceof Error ? error.message : 'Ошибка проверки владения доской';
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Ошибка проверки владения доской';
         res.status(403).json({
           success: false,
           error: {

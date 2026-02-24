@@ -44,16 +44,22 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(requestLogger);
 }
 
-// Flag to track if routes have been setup
-let routesSetup = false;
+// Global flag to track if routes have been setup (persists across test files)
+declare global {
+  var _kanbanRoutesSetup: boolean;
+}
+// @ts-ignore
+global._kanbanRoutesSetup = global._kanbanRoutesSetup || false;
 
 // T037: Setup routes and controllers
 async function setupRoutes() {
   // Only setup routes once (prevent duplicate route mounting in tests)
-  if (routesSetup) {
+  // @ts-ignore
+  if (global._kanbanRoutesSetup) {
     return;
   }
-  routesSetup = true;
+  // @ts-ignore
+  global._kanbanRoutesSetup = true;
 
   // Initialize repositories
   const userRepository = new UserRepository(AppDataSource);

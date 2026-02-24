@@ -27,7 +27,11 @@ export function validateDto<T extends object>(
   dtoClass: ClassConstructor<T>,
   skipMissingProperties: boolean = false
 ) {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     const dto = plainToInstance(dtoClass, req.body);
 
     const errors: ValidationError[] = await validate(dto, {
@@ -45,7 +49,11 @@ export function validateDto<T extends object>(
         error: {
           code: 'VALIDATION_ERROR',
           message: 'Validation failed',
-          errors: (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') ? formattedErrors : undefined,
+          errors:
+            process.env.NODE_ENV === 'development' ||
+            process.env.NODE_ENV === 'test'
+              ? formattedErrors
+              : undefined,
         },
         path: req.url,
         timestamp: new Date().toISOString(),
@@ -66,10 +74,12 @@ export function validateDto<T extends object>(
  * @param dtoClass - The DTO class to validate against
  * @returns Express middleware function
  */
-export function validateQuery<T extends object>(
-  dtoClass: ClassConstructor<T>
-) {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export function validateQuery<T extends object>(dtoClass: ClassConstructor<T>) {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     const dto = plainToInstance(dtoClass, req.query);
 
     const errors: ValidationError[] = await validate(dto, {
@@ -95,7 +105,7 @@ export function validateQuery<T extends object>(
       return;
     }
 
-    req.query = dto as any;
+    req.query = dto as unknown as Request['query'];
     next();
   };
 }
@@ -108,7 +118,11 @@ export function validateQuery<T extends object>(
 export function validateParams<T extends object>(
   dtoClass: ClassConstructor<T>
 ) {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     const dto = plainToInstance(dtoClass, req.params);
 
     const errors: ValidationError[] = await validate(dto, {
@@ -134,7 +148,7 @@ export function validateParams<T extends object>(
       return;
     }
 
-    req.params = dto as any;
+    req.params = dto as unknown as Request['params'];
     next();
   };
 }
@@ -155,10 +169,12 @@ export function formatValidationErrors(
     if (error.children && error.children.length > 0) {
       // Handle nested validation errors
       const nestedErrors = formatValidationErrors(error.children);
-      formattedErrors.push(...nestedErrors.map((e) => ({
-        field: `${error.property}.${e.field}`,
-        constraints: e.constraints,
-      })));
+      formattedErrors.push(
+        ...nestedErrors.map((e) => ({
+          field: `${error.property}.${e.field}`,
+          constraints: e.constraints,
+        }))
+      );
     } else if (constraints.length > 0) {
       formattedErrors.push({
         field: error.property,

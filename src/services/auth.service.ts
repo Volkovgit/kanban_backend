@@ -5,14 +5,21 @@
  * Использует bcrypt для хеширования паролей и JWT для токенов.
  */
 
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from './user.service';
 import { User } from '../models/user.entity';
 import { RegisterDto } from '../dto/auth/register.dto';
 import { LoginDto } from '../dto/auth/login.dto';
 import { RefreshTokenDto } from '../dto/auth/refresh-token.dto';
-import { AuthResponseDto, RegisterResponseDto } from '../dto/auth/auth-response.dto';
+import {
+  AuthResponseDto,
+  RegisterResponseDto,
+} from '../dto/auth/auth-response.dto';
 import * as bcrypt from 'bcrypt';
 
 /**
@@ -26,7 +33,7 @@ export class AuthService {
 
   constructor(
     private userService: UserService,
-    private jwtService: JwtService,
+    private jwtService: JwtService
   ) {}
 
   /**
@@ -41,7 +48,9 @@ export class AuthService {
     // Проверяем что пользователь не существует
     const existingUser = await this.userService.findByLogin(login);
     if (existingUser) {
-      throw new ConflictException('Пользователь с таким логином уже существует');
+      throw new ConflictException(
+        'Пользователь с таким логином уже существует'
+      );
     }
 
     // Создаём пользователя (пароль хешируется в UserService)
@@ -85,7 +94,11 @@ export class AuthService {
 
       // Проверяем нужно ли заблокировать
       const updatedUser = await this.userService.findByLogin(login);
-      if (updatedUser && updatedUser.lockedUntil && new Date(updatedUser.lockedUntil) > now) {
+      if (
+        updatedUser &&
+        updatedUser.lockedUntil &&
+        new Date(updatedUser.lockedUntil) > now
+      ) {
         throw new UnauthorizedException(
           `Аккаунт заблокирован после 5 неудачных попыток на ${this.LOCK_DURATION_MINUTES} минут`
         );
@@ -136,7 +149,10 @@ export class AuthService {
       }
 
       // T033: Проверяем что refresh токен совпадает с сохранённым в БД
-      const isTokenValid = await this.userService.verifyRefreshToken(user.id, refreshToken);
+      const isTokenValid = await this.userService.verifyRefreshToken(
+        user.id,
+        refreshToken
+      );
       if (!isTokenValid) {
         throw new UnauthorizedException('Невалидный refresh токен');
       }
@@ -156,7 +172,9 @@ export class AuthService {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
-      throw new UnauthorizedException('Невалидный или просроченный refresh токен');
+      throw new UnauthorizedException(
+        'Невалидный или просроченный refresh токен'
+      );
     }
   }
 
@@ -165,7 +183,10 @@ export class AuthService {
    * Удаляет refresh токен из БД (инвалидирует его)
    * @param logoutDto - Данные для выхода (refreshToken, userId)
    */
-  async logout(logoutDto: { refreshToken: string; userId: string }): Promise<void> {
+  async logout(logoutDto: {
+    refreshToken: string;
+    userId: string;
+  }): Promise<void> {
     const { refreshToken, userId } = logoutDto;
 
     try {
@@ -249,7 +270,9 @@ export class AuthService {
    * @param token - JWT токен
    * @returns Payload токена
    */
-  async verifyAccessToken(token: string): Promise<{ sub: string; login: string }> {
+  async verifyAccessToken(
+    token: string
+  ): Promise<{ sub: string; login: string }> {
     try {
       const payload = await this.jwtService.verifyAsync(token);
       return {
@@ -257,7 +280,9 @@ export class AuthService {
         login: payload.login,
       };
     } catch (error) {
-      throw new UnauthorizedException('Невалидный или просроченный access токен');
+      throw new UnauthorizedException(
+        'Невалидный или просроченный access токен'
+      );
     }
   }
 }

@@ -29,7 +29,10 @@ const options: swaggerJsdoc.Options = {
     servers: [
       {
         url: process.env.API_URL || 'http://localhost:3000',
-        description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server',
+        description:
+          process.env.NODE_ENV === 'production'
+            ? 'Production server'
+            : 'Development server',
       },
     ],
     tags: [
@@ -56,7 +59,8 @@ const options: swaggerJsdoc.Options = {
           type: 'http',
           scheme: 'bearer',
           bearerFormat: 'JWT',
-          description: 'JWT authorization header using the Bearer scheme. Example: "Authorization: Bearer {token}"',
+          description:
+            'JWT authorization header using the Bearer scheme. Example: "Authorization: Bearer {token}"',
         },
       },
       schemas: {
