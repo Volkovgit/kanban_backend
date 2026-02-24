@@ -236,32 +236,32 @@
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T060 [P] [US3] Contract test для GET /boards/:boardId/tasks в tests/contract/task.spec.ts
-- [ ] T061 [P] [US3] Contract test для POST /boards/:boardId/tasks в tests/contract/task.spec.ts
-- [ ] T062 [P] [US3] Contract test для GET /tasks/:id в tests/contract/task.spec.ts
-- [ ] T063 [P] [US3] Contract test для PATCH /tasks/:id в tests/contract/task.spec.ts
-- [ ] T064 [P] [US3] Contract test для DELETE /tasks/:id в tests/contract/task.spec.ts
-- [ ] T065 [P] [US3] Integration test для CRUD задач в tests/integration/task.spec.ts
-- [ ] T066 [P] [US3] Integration test для дефолтных значений (BACKLOG, MEDIUM) в tests/integration/task.spec.ts
-- [ ] T067 [P] [US3] Integration test для изоляции по доскам в tests/integration/task.spec.ts
-- [ ] T068 [P] [US3] Integration test для лимита 1000 задач на доску в tests/integration/task.spec.ts
-- [ ] T069 [P] [US3] Unit test для TaskService в tests/unit/task.service.spec.ts
+- [X] T060 [P] [US3] Contract test для GET /boards/:boardId/tasks в tests/contract/task.spec.ts
+- [X] T061 [P] [US3] Contract test для POST /boards/:boardId/tasks в tests/contract/task.spec.ts
+- [X] T062 [P] [US3] Contract test для GET /tasks/:id в tests/contract/task.spec.ts
+- [X] T063 [P] [US3] Contract test для PATCH /tasks/:id в tests/contract/task.spec.ts
+- [X] T064 [P] [US3] Contract test для DELETE /tasks/:id в tests/contract/task.spec.ts
+- [X] T065 [P] [US3] Integration test для CRUD задач в tests/integration/task.spec.ts
+- [X] T066 [P] [US3] Integration test для дефолтных значений (BACKLOG, MEDIUM) в tests/integration/task.spec.ts
+- [X] T067 [P] [US3] Integration test для изоляции по доскам в tests/integration/task.spec.ts
+- [X] T068 [P] [US3] Integration test для лимита 1000 задач на доску в tests/integration/task.spec.ts
+- [X] T069 [P] [US3] Unit test для TaskService в tests/unit/task.service.spec.ts
 
 ### Implementation for User Story 3
 
 #### DTOs
 
-- [ ] T070 [P] [US3] Создать CreateTaskDto в src/dto/task/create-task.dto.ts с валидацией title (не пустой, max 255), description (nullable, max 5000), status (enum, default BACKLOG), priority (enum, default MEDIUM)
-- [ ] T071 [P] [US3] Создать UpdateTaskDto в src/dto/task/update-task.dto.ts с опциональными полями title, description, status, priority
-- [ ] T072 [P] [US3] Создать TaskResponseDto в src/dto/task/task-response.dto.ts
+- [X] T070 [P] [US3] Создать CreateTaskDto в src/dto/task/create-task.dto.ts с валидацией title (не пустой, max 255), description (nullable, max 5000), status (enum, default BACKLOG), priority (enum, default MEDIUM)
+- [X] T071 [P] [US3] Создать UpdateTaskDto в src/dto/task/update-task.dto.ts с опциональными полями title, description, status, priority
+- [X] T072 [P] [US3] Создать TaskResponseDto в src/dto/task/task-response.dto.ts
 
 #### Repository
 
-- [ ] T073 [US3] Обновить TaskRepository в src/repositories/task.repository.ts с методами findByBoard, countByBoard, findByBoardWithFilters (status, priority)
+- [X] T073 [US3] Обновить TaskRepository в src/repositories/task.repository.ts с методами findByBoard, countByBoard, findByBoardWithFilters (status, priority)
 
 #### Service
 
-- [ ] T074 [US3] Обновить TaskService в src/services/task.service.ts extending BaseService с методами:
+- [X] T074 [US3] Обновить TaskService в src/services/task.service.ts extending BaseService с методами:
   - create (создание задачи с дефолтными значениями BACKLOG/MEDIUM)
   - findByBoard (получение задач доски с пагинацией и фильтрацией)
   - findById (получение задачи с проверкой владения доской)
@@ -271,11 +271,11 @@
 
 #### Middleware
 
-- [ ] T075 [P] [US3] Обновить validateBoardOwnership middleware в src/middleware/validate-board-ownership.ts для поддержки task endpoints (проверка владения доской задачи)
+- [X] T075 [P] [US3] Обновить validateBoardOwnership middleware в src/middleware/validate-board-ownership.ts для поддержки task endpoints (проверка владения доской задачи)
 
 #### Controller
 
-- [ ] T076 [US3] Обновить TaskController в src/controllers/task.controller.ts extending BaseController с эндпоинтами:
+- [X] T076 [US3] Обновить TaskController в src/controllers/task.controller.ts extending BaseController с эндпоинтами:
   - GET /boards/:boardId/tasks (список задач доски с фильтрацией по status/priority)
   - POST /boards/:boardId/tasks (создание задачи)
   - GET /tasks/:id (получение задачи)
@@ -284,12 +284,12 @@
 
 #### Routes
 
-- [ ] T077 [US3] Зарегистрировать task routes в src/main.ts с authenticate и validateBoardOwnership middleware
+- [X] T077 [US3] Зарегистрировать task routes в src/main.ts с authenticate и validateBoardOwnership middleware
 
 #### Swagger Documentation
 
-- [ ] T078 [US3] Добавить Swagger декораторы в TaskController (зависит от T076)
-- [ ] T079 [US3] Добавить @ApiProperty() декораторы во все Task DTOs (зависит от T070-T072)
+- [X] T078 [US3] Добавить Swagger декораторы в TaskController (зависит от T076)
+- [X] T079 [US3] Добавить @ApiProperty() декораторы во все Task DTOs (зависит от T070-T072)
 
 **Checkpoint**: Все user stories независимо функциональны. Пользователи могут аутентифицироваться, управлять досками и задачами.
 

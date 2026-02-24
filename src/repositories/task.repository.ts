@@ -33,7 +33,22 @@ export class TaskRepository extends BaseRepository<Task> {
     }
 
     if (page && pageSize) {
-      return this.findAll({ page, pageSize });
+      const skip = (page - 1) * pageSize;
+
+      const [data, total] = await this.repository.findAndCount({
+        where,
+        skip,
+        take: pageSize,
+        cache: false,
+      });
+
+      return {
+        data,
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize),
+      };
     }
 
     const data = await this.findMany(where);
@@ -44,6 +59,13 @@ export class TaskRepository extends BaseRepository<Task> {
       pageSize: data.length,
       totalPages: 1,
     };
+  }
+
+  /**
+   * Count tasks by board
+   */
+  async countByBoard(boardId: string): Promise<number> {
+    return this.count({ boardId });
   }
 
   /**

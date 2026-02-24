@@ -12,7 +12,7 @@ import { TaskStatus, TaskPriority } from '../enums';
 import { TaskRepository } from '../repositories/task.repository';
 import { BoardRepository } from '../repositories/board.repository';
 import { BaseService } from './base.service';
-import { CreateTaskDto, UpdateTaskDto } from '../dto/task.dto';
+import { CreateTaskDto, UpdateTaskDto } from '../dto/task';
 import { AppError } from '../middleware/error-handler';
 
 export class TaskService extends BaseService<Task> {
@@ -29,6 +29,10 @@ export class TaskService extends BaseService<Task> {
   async createTask(createDto: CreateTaskDto, userId: string): Promise<Task> {
     const { title, description, status, priority, boardId } = createDto;
 
+    if (!boardId) {
+      throw new AppError(400, 'boardId обязателен', 'ValidationError');
+    }
+
     // Validate board exists and user owns it
     const board = await this.boardRepository.findOne({ id: boardId });
     if (!board || board.ownerId !== userId) {
@@ -36,9 +40,9 @@ export class TaskService extends BaseService<Task> {
     }
 
     // Check board task limit (1000 tasks per board)
-    const taskCount = await this.taskRepository.countByBoardId(boardId);
+    const taskCount = await this.taskRepository.countByBoard(boardId);
     if (taskCount >= 1000) {
-      throw new AppError(400, 'Maximum task limit reached for this board', 'ValidationError');
+      throw new AppError(429, 'Достигнут лимит задач (максимум 1000 на доску)', 'TASK_LIMIT_EXCEEDED');
     }
 
     // Create task with default values

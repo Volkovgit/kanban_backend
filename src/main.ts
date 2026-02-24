@@ -10,19 +10,18 @@ import { requestLogger } from './middleware/logger';
 import { UserRepository } from './repositories/user.repository';
 import { ProjectRepository } from './repositories/project.repository';
 import { BoardRepository } from './repositories/board.repository';
+import { TaskRepository } from './repositories/task.repository';
 import { UserService } from './services/user.service';
 import { AuthService } from './services/auth.service';
 import { ProjectService } from './services/project.service';
 import { BoardService } from './services/board.service';
-// import { TaskService } from './services/task.service';
+import { TaskService } from './services/task.service';
 // import { LabelService } from './services/label.service';
 import { AuthController } from './controllers/auth.controller';
 import { ProjectController } from './controllers/project.controller';
 import { BoardController } from './controllers/board.controller';
-// import { TaskController } from './controllers/task.controller';
+import { TaskController } from './controllers/task.controller';
 // import { LabelController } from './controllers/label.controller';
-// import { TaskRepository } from './repositories/task.repository';
-// import { LabelRepository } from './repositories/label.repository';
 import { JwtService } from '@nestjs/jwt';
 
 const app = express();
@@ -59,7 +58,7 @@ async function setupRoutes() {
   const userRepository = new UserRepository(AppDataSource);
   const projectRepository = new ProjectRepository(AppDataSource);
   const boardRepository = new BoardRepository(AppDataSource);
-  // const taskRepository = new TaskRepository(AppDataSource);
+  const taskRepository = new TaskRepository(AppDataSource);
   // const labelRepository = new LabelRepository(AppDataSource);
 
   // T037: Initialize services
@@ -71,7 +70,7 @@ async function setupRoutes() {
   const authService = new AuthService(userService, jwtService);
   const projectService = new ProjectService(projectRepository, userRepository);
   const boardService = new BoardService(boardRepository);
-  // const taskService = new TaskService(taskRepository, boardRepository);
+  const taskService = new TaskService(taskRepository, boardRepository);
   // const labelService = new LabelService(labelRepository, projectRepository);
 
   // T037: Initialize controllers
@@ -79,7 +78,7 @@ async function setupRoutes() {
   const authController = new AuthController(authService, AppDataSource);
   const projectController = new ProjectController(projectService, AppDataSource);
   const boardController = new BoardController(boardService, AppDataSource);
-  // const taskController = new TaskController(taskService);
+  const taskController = new TaskController(taskService, AppDataSource);
   // const labelController = new LabelController(labelService);
 
   // T037: Mount routes с rate limiter middleware
@@ -88,7 +87,8 @@ async function setupRoutes() {
   app.use('/api/v1/projects', projectController.getRouter());
   // T057: Mount board routes
   app.use('/api/v1/boards', boardController.getRouter());
-  // app.use('/api/v1/tasks', taskController.getRouter());
+  // T077: Mount task routes
+  app.use('/api/v1', taskController.getRouter());
   // app.use('/api/v1/labels', labelController.getRouter());
 
   // Global error handler (must be LAST)
