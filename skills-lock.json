@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "skills": {
+    "api-design": {
+      "source": "affaan-m/everything-claude-code",
+      "sourceType": "github",
+      "computedHash": "537aad3150859d0f9b1f1ccd06cc663b14aaffe3dcc7e3dddf156c9830ef48b4"
+    },
+    "backend-patterns": {
+      "source": "affaan-m/everything-claude-code",
+      "sourceType": "github",
+      "computedHash": "8bb766a2fec0875d813379e4cdc7ea3243bd2f7d50463895dbf67f902a5c4121"
+    },
+    "coding-standards": {
+      "source": "affaan-m/everything-claude-code",
+      "sourceType": "github",
+      "computedHash": "ff7ee232ffcf86f0cee6ef4b785b9356b56f2c43a13f06a921bda7f4d67535e7"
+    },
+    "docker-patterns": {
+      "source": "affaan-m/everything-claude-code",
+      "sourceType": "github",
+      "computedHash": "4abb28ff5f014168f60302335e6113ae3648c44c930134b274eb84fd616d40a5"
+    },
+    "e2e-testing": {
+      "source": "affaan-m/everything-claude-code",
+      "sourceType": "github",
+      "computedHash": "350b283e8c6aa1e94ba72052be6a5cbdf0b8bcdc79439dbd4089d68d8b5c5a6d"
+    },
+    "postgres-patterns": {
+      "source": "affaan-m/everything-claude-code",
+      "sourceType": "github",
+      "computedHash": "6a43a87b521abd69daf06b63c2866c438b24bb45129a8a5a3178480badb4d845"
+    },
+    "security-review": {
+      "source": "affaan-m/everything-claude-code",
+      "sourceType": "github",
+      "computedHash": "f2293fda202029f35b4d5175d2b229ad01b59c08a5ba4bb16287f60074d35970"
+    },
+    "security-scan": {
+      "source": "affaan-m/everything-claude-code",
+      "sourceType": "github",
+      "computedHash": "56f9714754928b5e09693b0c6dff602ae02bbd0b35ee7055ec11ed2abed6759b"
+    }
+  }
+}

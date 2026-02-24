@@ -1,13 +1,5 @@
-/**
- * TaskStatus enum representing workflow stages
- */
-export enum TaskStatus {
-  BACKLOG = 'Backlog',
-  TODO = 'To Do',
-  IN_PROGRESS = 'In Progress',
-  REVIEW = 'Review',
-  DONE = 'Done'
-}
+import { TaskStatus } from '../../enums/task-status.enum';
+import { TaskPriority } from '../../enums/task-priority.enum';
 
 /**
  * Task interface representing a work item
@@ -17,15 +9,8 @@ export interface Task {
   title: string;
   description: string | null;
   status: TaskStatus;
-  dueDate: Date | null;
-  projectId: string;
-  completedAt: Date | null;
+  priority: TaskPriority;
+  boardId: string;
   createdAt: Date;
   updatedAt: Date;
-  labels?: Label[];
 }
-
-/**
- * Import Label interface locally to avoid circular dependency
- */
-import { Label } from './label.interface';

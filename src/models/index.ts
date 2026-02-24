@@ -6,7 +6,5 @@
  */
 
 export { User } from './user.entity';
-export { Project } from './project.entity';
 export { Task } from './task.entity';
-export { Label } from './label.entity';
 export { Board } from './board.entity';

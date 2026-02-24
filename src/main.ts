@@ -7,25 +7,28 @@ import corsOptions from './config/cors';
 import { errorHandler } from './middleware/error-handler';
 import { jsonErrorHandler } from './middleware/json-error.middleware';
 import { requestLogger } from './middleware/logger';
+import { correlationIdMiddleware } from './middleware/correlation-id';
 import { UserRepository } from './repositories/user.repository';
-import { ProjectRepository } from './repositories/project.repository';
 import { BoardRepository } from './repositories/board.repository';
 import { TaskRepository } from './repositories/task.repository';
 import { UserService } from './services/user.service';
 import { AuthService } from './services/auth.service';
-import { ProjectService } from './services/project.service';
 import { BoardService } from './services/board.service';
 import { TaskService } from './services/task.service';
-// import { LabelService } from './services/label.service';
 import { AuthController } from './controllers/auth.controller';
-import { ProjectController } from './controllers/project.controller';
 import { BoardController } from './controllers/board.controller';
 import { TaskController } from './controllers/task.controller';
-// import { LabelController } from './controllers/label.controller';
+import { HealthController } from './controllers/health.controller';
 import { JwtService } from '@nestjs/jwt';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Validate essential environment variables in production
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  console.error('❌ FATAL: JWT_SECRET environment variable is not set in production!');
+  process.exit(1);
+}
 
 // Middleware
 app.use(cors(corsOptions));
@@ -33,15 +36,13 @@ app.use(express.json());
 app.use(jsonErrorHandler);
 app.use(express.urlencoded({ extended: true }));
 
+// Correlation ID middleware
+app.use(correlationIdMiddleware);
+
 // Request logging middleware (skip in test to reduce noise)
 if (process.env.NODE_ENV !== 'test') {
   app.use(requestLogger);
 }
-
-// Health check endpoint
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', message: 'API server is running', database: 'connected' });
-});
 
 // Flag to track if routes have been setup
 let routesSetup = false;
@@ -56,40 +57,29 @@ async function setupRoutes() {
 
   // Initialize repositories
   const userRepository = new UserRepository(AppDataSource);
-  const projectRepository = new ProjectRepository(AppDataSource);
   const boardRepository = new BoardRepository(AppDataSource);
   const taskRepository = new TaskRepository(AppDataSource);
-  // const labelRepository = new LabelRepository(AppDataSource);
 
   // T037: Initialize services
   const userService = new UserService(userRepository);
-  // T037: AuthService теперь требует UserService и JwtService
   const jwtService = new JwtService({
     secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
   });
   const authService = new AuthService(userService, jwtService);
-  const projectService = new ProjectService(projectRepository, userRepository);
   const boardService = new BoardService(boardRepository);
   const taskService = new TaskService(taskRepository, boardRepository);
-  // const labelService = new LabelService(labelRepository, projectRepository);
 
   // T037: Initialize controllers
-  // AuthController теперь требует AuthService и DataSource
   const authController = new AuthController(authService, AppDataSource);
-  const projectController = new ProjectController(projectService, AppDataSource);
   const boardController = new BoardController(boardService, AppDataSource);
   const taskController = new TaskController(taskService, AppDataSource);
-  // const labelController = new LabelController(labelService);
+  const healthController = new HealthController();
 
-  // T037: Mount routes с rate limiter middleware
-  // Auth endpoints уже имеют rate limiter внутри контроллера
+  // T037: Mount routes
   app.use('/api/v1/auth', authController.getRouter());
-  app.use('/api/v1/projects', projectController.getRouter());
-  // T057: Mount board routes
   app.use('/api/v1/boards', boardController.getRouter());
-  // T077: Mount task routes
   app.use('/api/v1', taskController.getRouter());
-  // app.use('/api/v1/labels', labelController.getRouter());
+  app.use('/api/v1/health', healthController.getRouter());
 
   // Global error handler (must be LAST)
   app.use(errorHandler);

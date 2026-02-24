@@ -10,6 +10,35 @@ import { format } from 'winston';
 
 const { combine, timestamp, printf, colorize, json } = format;
 
+// Format to redact sensitive information
+const redactSensitive = format((info) => {
+  const sanitize = (obj: any): any => {
+    if (!obj || typeof obj !== 'object') return obj;
+    if (Array.isArray(obj)) return obj.map(sanitize);
+
+    const result: any = {};
+    for (const key in obj) {
+      if (key.toLowerCase().includes('password') || key.toLowerCase().includes('token')) {
+        result[key] = '[REDACTED]';
+      } else {
+        result[key] = sanitize(obj[key]);
+      }
+    }
+    return result;
+  };
+
+  // Redact properties in the info object
+  for (const key of Object.keys(info)) {
+    if (key === 'level' || key === 'message' || typeof key === 'symbol') continue;
+    if (key.toLowerCase().includes('password') || key.toLowerCase().includes('token')) {
+      info[key] = '[REDACTED]';
+    } else if (typeof info[key] === 'object' && info[key] !== null) {
+      info[key] = sanitize(info[key]);
+    }
+  }
+  return info;
+});
+
 // Custom log format for development
 const devLogFormat = printf(({ level, message, timestamp, ...metadata }) => {
   const correlationId = metadata.correlationId ? `[${metadata.correlationId}]` : '';
@@ -23,6 +52,7 @@ const devLogFormat = printf(({ level, message, timestamp, ...metadata }) => {
 export const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: combine(
+    process.env.NODE_ENV === 'production' ? redactSensitive() : redactSensitive(),
     timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     // Use different formats based on environment
     process.env.NODE_ENV === 'production' ? json() : combine(colorize({ all: true }), devLogFormat)

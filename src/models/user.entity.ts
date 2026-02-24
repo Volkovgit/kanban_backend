@@ -8,7 +8,7 @@
 
 import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, Generated } from 'typeorm';
 import { Exclude } from 'class-transformer';
-import { Project } from './project.entity';
+// import { Project } from './project.entity';
 import { Board } from './board.entity';
 
 @Entity()
@@ -57,8 +57,8 @@ export class User {
   updatedAt!: Date;
 
   // Relationships - cascade delete projects when user is deleted
-  @OneToMany(() => Project, (project) => project.owner, { cascade: true })
-  projects!: Project[];
+  // @OneToMany(() => Project, (project) => project.owner, { cascade: true })
+  // projects!: Project[];
 
   // Relationships - cascade delete boards when user is deleted
   @OneToMany(() => Board, (board) => board.owner, { cascade: true })

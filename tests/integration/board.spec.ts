@@ -262,21 +262,18 @@ describe('Board Integration Tests', () => {
       await AppDataSource.query(`DELETE FROM task WHERE "boardId" IN (SELECT id FROM board WHERE "ownerId" = '${testUserId}' AND title LIKE 'board_limit_%')`);
       await AppDataSource.query(`DELETE FROM board WHERE "ownerId" = '${testUserId}' AND title LIKE 'board_limit_%'`);
 
-      // Создаём 99 досок
-      const createPromises = [];
+      // Создаём 99 досок последовательно
+      const responses = [];
       for (let i = 0; i < 99; i++) {
-        createPromises.push(
-          request(server)
-            .post('/api/v1/boards')
-            .set('Authorization', `Bearer ${accessToken}`)
-            .send({
-              title: `board_limit_${i}`,
-              description: `Board ${i}`,
-            })
-        );
+        const response = await request(server)
+          .post('/api/v1/boards')
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send({
+            title: `board_limit_${i}`,
+            description: `Board ${i}`,
+          });
+        responses.push(response);
       }
-
-      const responses = await Promise.all(createPromises);
 
       // Все должны быть успешными
       responses.forEach((response) => {
@@ -293,23 +290,18 @@ describe('Board Integration Tests', () => {
     });
 
     it('должен вернуть 429 при попытке создать более 100 досок', async () => {
-      // Очищаем и создаём ровно 100 досок
+      // Очищаем и создаём ровно 100 досок последовательно
       await AppDataSource.query(`DELETE FROM task WHERE "boardId" IN (SELECT id FROM board WHERE "ownerId" = '${testUserId}')`);
       await AppDataSource.query(`DELETE FROM board WHERE "ownerId" = '${testUserId}'`);
 
-      const createPromises = [];
       for (let i = 0; i < 100; i++) {
-        createPromises.push(
-          request(server)
-            .post('/api/v1/boards')
-            .set('Authorization', `Bearer ${accessToken}`)
-            .send({
-              title: `board_limit_full_${i}`,
-            })
-        );
+        await request(server)
+          .post('/api/v1/boards')
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send({
+            title: `board_limit_full_${i}`,
+          });
       }
-
-      await Promise.all(createPromises);
 
       // Пытаемся создать 101-ю доску
       const response = await request(server)

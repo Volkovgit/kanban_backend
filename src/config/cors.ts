@@ -29,8 +29,8 @@ export const corsOptions: CorsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['X-Total-Count', 'X-Page-Size'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID', 'Accept', 'X-Requested-With'],
+  exposedHeaders: ['X-Total-Count', 'X-Page-Size', 'X-Correlation-ID'],
   maxAge: 86400,
 };
 

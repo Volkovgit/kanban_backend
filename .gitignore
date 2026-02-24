@@ -3,8 +3,11 @@ dist/
 coverage/
 *.log
 .DS_Store
-.env
+.env*
 .vscode/
 .idea/
 *.swp
 *.swo
+*.tmp
+Thumbs.db
+.eslintcache

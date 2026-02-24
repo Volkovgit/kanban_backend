@@ -34,24 +34,16 @@ const options: swaggerJsdoc.Options = {
     ],
     tags: [
       {
-        name: 'Auth',
+        name: 'Authentication',
         description: 'Authentication endpoints',
       },
       {
-        name: 'Users',
-        description: 'User management endpoints',
-      },
-      {
-        name: 'Projects',
-        description: 'Project management endpoints',
+        name: 'Boards',
+        description: 'Board management endpoints',
       },
       {
         name: 'Tasks',
         description: 'Task management endpoints',
-      },
-      {
-        name: 'Labels',
-        description: 'Label management endpoints',
       },
       {
         name: 'Health',

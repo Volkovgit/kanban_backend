@@ -57,8 +57,4 @@ export function isDatabaseConnected(): boolean {
   return AppDataSource.isInitialized;
 }
 
-/**
- * Get the DataSource instance
- * This is useful for migrations and testing
- */
-export default AppDataSource;
+

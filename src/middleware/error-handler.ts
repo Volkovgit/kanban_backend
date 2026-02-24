@@ -43,6 +43,25 @@ export class AppError extends Error {
 }
 
 /**
+ * Maps HTTP status codes to standard error codes
+ */
+const getErrorCode = (status: number, defaultCode: string = 'ERROR'): string => {
+  const codes: Record<number, string> = {
+    400: 'BAD_REQUEST',
+    401: 'UNAUTHORIZED',
+    403: 'FORBIDDEN',
+    404: 'NOT_FOUND',
+    409: 'CONFLICT',
+    422: 'UNPROCESSABLE_ENTITY',
+    429: 'TOO_MANY_REQUESTS',
+    500: 'INTERNAL_ERROR',
+    502: 'BAD_GATEWAY',
+    503: 'SERVICE_UNAVAILABLE',
+  };
+  return codes[status] || defaultCode;
+};
+
+/**
  * Global error handler middleware
  */
 export function errorHandler(
@@ -61,6 +80,15 @@ export function errorHandler(
     });
   }
 
+  // Helper to attach correlation ID
+  const sendResponse = (statusCode: number, responseObj: any) => {
+    const correlationId = req.headers['x-correlation-id'];
+    if (correlationId) {
+      responseObj.correlationId = correlationId;
+    }
+    res.status(statusCode).json(responseObj);
+  };
+
   // Handle NestJS HttpExceptions
   if (err instanceof HttpException) {
     const statusCode = err.getStatus();
@@ -70,7 +98,6 @@ export function errorHandler(
     let message = err.message;
     let errors: any;
 
-    // Если ответ в формате { message, error, ... }
     if (typeof exceptionResponse === 'object') {
       error = (exceptionResponse as any).error || error;
       message = (exceptionResponse as any).message || message;
@@ -80,18 +107,14 @@ export function errorHandler(
     const response = {
       success: false,
       error: {
-        code: statusCode === 401 ? 'UNAUTHORIZED' :
-              statusCode === 409 ? 'CONFLICT' :
-              statusCode === 403 ? 'FORBIDDEN' :
-              statusCode === 404 ? 'NOT_FOUND' :
-              statusCode === 400 ? 'BAD_REQUEST' : 'ERROR',
+        code: getErrorCode(statusCode, 'ERROR'),
         message,
         ...(errors ? { errors } : {}),
       },
       timestamp: new Date().toISOString(),
       path: req.url,
     };
-    res.status(statusCode).json(response);
+    sendResponse(statusCode, response);
     return;
   }
 
@@ -100,14 +123,14 @@ export function errorHandler(
     const response = {
       success: false,
       error: {
-        code: err.error || 'ERROR',
+        code: err.error || getErrorCode(err.statusCode, 'ERROR'),
         message: err.message,
         ...(err.errors ? { errors: err.errors } : {}),
       },
       timestamp: new Date().toISOString(),
       path: req.url,
     };
-    res.status(err.statusCode).json(response);
+    sendResponse(err.statusCode, response);
     return;
   }
 
@@ -125,7 +148,7 @@ export function errorHandler(
         timestamp: new Date().toISOString(),
         path: req.url,
       };
-      res.status(409).json(response);
+      sendResponse(409, response);
       return;
     }
     // Check for foreign key violation (code '23503')
@@ -139,7 +162,7 @@ export function errorHandler(
         timestamp: new Date().toISOString(),
         path: req.url,
       };
-      res.status(400).json(response);
+      sendResponse(400, response);
       return;
     }
     // Generic database error
@@ -154,7 +177,7 @@ export function errorHandler(
       timestamp: new Date().toISOString(),
       path: req.url,
     };
-    res.status(500).json(response);
+    sendResponse(500, response);
     return;
   }
 
@@ -169,7 +192,7 @@ export function errorHandler(
       timestamp: new Date().toISOString(),
       path: req.url,
     };
-    res.status(401).json(response);
+    sendResponse(401, response);
     return;
   }
 
@@ -184,7 +207,7 @@ export function errorHandler(
       timestamp: new Date().toISOString(),
       path: req.url,
     };
-    res.status(401).json(response);
+    sendResponse(401, response);
     return;
   }
 
@@ -199,7 +222,7 @@ export function errorHandler(
       timestamp: new Date().toISOString(),
       path: req.url,
     };
-    res.status(400).json(response);
+    sendResponse(400, response);
     return;
   }
 
@@ -216,7 +239,7 @@ export function errorHandler(
     path: req.url,
   };
 
-  res.status(500).json(response);
+  sendResponse(500, response);
 }
 
 /**

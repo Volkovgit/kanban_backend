@@ -22,7 +22,7 @@
 **Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
 **Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
 **Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
+**Project Type**: [e.g., library/cli/web-service/mobile-app/compiler/desktop-app or NEEDS CLARIFICATION]  
 **Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
 **Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
 **Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
@@ -31,48 +31,7 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-**Project Scope - API-Only Backend**:
-- [ ] No frontend/UI components included
-- [ ] All functionality exposed via REST API
-- [ ] JSON responses only (no HTML rendering)
-
-**Principle I - Layered Architecture**:
-- [ ] Controller → Service → Repository separation maintained
-- [ ] No direct repository access from controllers
-- [ ] DTOs used for all input/output validation
-
-**Principle II - Test Coverage Discipline**:
-- [ ] Test plan defined (unit + integration)
-- [ ] Coverage target: 70%+ across all modules
-
-**Principle III - Base Class Inheritance**:
-- [ ] Controllers extend BaseController
-- [ ] Services extend BaseService
-- [ ] Repositories extend BaseRepository
-
-**Principle IV - Manual Dependency Injection**:
-- [ ] No DI frameworks used
-- [ ] Dependencies wired in src/main.ts
-
-**Principle V - Ownership & Authorization**:
-- [ ] Protected routes use authenticate middleware
-- [ ] Project resources use validateProjectOwnership middleware
-- [ ] User/project isolation enforced
-
-**API Documentation Synchronization** (if API-modifying feature):
-- [ ] Swagger decorators updated for new endpoints
-- [ ] Request/Response DTOs documented with @ApiProperty()
-- [ ] Error responses documented (400, 401, 403, 404, 500)
-- [ ] Documentation verification before commit
-
-**Task Status Workflow** (if task-related feature):
-- [ ] Bi-directional status transitions supported
-- [ ] Status enum values validated
-
-**Search Requirements** (if search-related feature):
-- [ ] Multi-parameter filtering supported
-- [ ] Search scoped to user's data only
-- [ ] Results paginated
+[Gates determined based on constitution file]
 
 ## Project Structure
 

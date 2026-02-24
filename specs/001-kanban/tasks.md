@@ -310,25 +310,25 @@
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T080 [P] [US4] Integration test для всех переходов статусов в tests/integration/task-status-workflow.spec.ts
-- [ ] T081 [P] [US4] Integration test для bi-directional workflow (вперёд и назад) в tests/integration/task-status-workflow.spec.ts
-- [ ] T082 [P] [US4] Integration test для невалидных статусов в tests/integration/task-status-workflow.spec.ts
-- [ ] T083 [P] [US4] Integration test для изменений приоритета в tests/integration/task-status-workflow.spec.ts
-- [ ] T084 [P] [US4] Unit test для валидации enum значений в tests/unit/task.dto.spec.ts
+- [X] T080 [P] [US4] Integration test для всех переходов статусов в tests/integration/task-status-workflow.spec.ts
+- [X] T081 [P] [US4] Integration test для bi-directional workflow (вперёд и назад) в tests/integration/task-status-workflow.spec.ts
+- [X] T082 [P] [US4] Integration test для невалидных статусов в tests/integration/task-status-workflow.spec.ts
+- [X] T083 [P] [US4] Integration test для изменений приоритета в tests/integration/task-status-workflow.spec.ts
+- [X] T084 [P] [US4] Unit test для валидации enum значений в tests/unit/task.dto.spec.ts
 
 ### Implementation for User Story 4
 
 #### DTOs
 
-- [ ] T085 [P] [US4] Обновить UpdateTaskDto в src/dto/task/update-task.dto.ts с валидацией enum значений status и priority (class-validator @IsEnum)
+- [X] T085 [P] [US4] Обновить UpdateTaskDto в src/dto/task/update-task.dto.ts с валидацией enum значений status и priority (class-validator @IsEnum)
 
 #### Service
 
-- [ ] T086 [US4] Убедиться что TaskService.update в src/services/task.service.ts разрешает любые переходы статусов (нет ограничений на transition logic)
+- [X] T086 [US4] Убедиться что TaskService.update в src/services/task.service.ts разрешает любые переходы статусов (нет ограничений на transition logic)
 
 #### Validation
 
-- [ ] T087 [P] [US4] Добавить custom validator для TaskStatus enum в src/validators/task-status.validator.ts (если требуется дополнительная валидация)
+- [X] T087 [P] [US4] Добавить custom validator для TaskStatus enum в src/validators/task-status.validator.ts (если требуется дополнительная валидация)
 
 **Checkpoint**: Bi-directional workflow полностью функционален. Любой статус может быть изменён на любой другой без ограничений.
 
@@ -340,34 +340,34 @@
 
 ### Health Check & Operations
 
-- [ ] T088 [P] Создать health check endpoint в src/controllers/health.controller.ts
-- [ ] T089 Зарегистрировать health check route в src/main.ts (GET /api/v1/health)
+- [X] T088 [P] Создать health check endpoint в src/controllers/health.controller.ts
+- [X] T089 Зарегистрировать health check route в src/main.ts (GET /api/v1/health)
 
 ### Documentation
 
-- [ ] T090 [P] Обновить Swagger configuration в src/config/swagger.ts с информацией о всех тегах (Authentication, Boards, Tasks)
-- [ ] T091 [P] Создать README.md в корне проекта с инструкциями по установке и запуску
-- [ ] T092 [P] Создать API.md с примерами запросов для всех endpoints
+- [X] T090 [P] Обновить Swagger configuration в src/config/swagger.ts с информацией о всех тегах (Authentication, Boards, Tasks)
+- [X] T091 [P] Создать README.md в корне проекта с инструкциями по установке и запуску
+- [X] T092 [P] Создать API.md с примерами запросов для всех endpoints
 
 ### Error Handling
 
-- [ ] T093 Обновить error handler middleware в src/middleware/error-handler.ts для поддержки всех error codes
-- [ ] T094 Добавить correlation ID middleware в src/middleware/correlation-id.ts для трассировки запросов
+- [X] T093 Обновить error handler middleware в src/middleware/error-handler.ts для поддержки всех error codes
+- [X] T094 Добавить correlation ID middleware в src/middleware/correlation-id.ts для трассировки запросов
 
 ### Security Hardening
 
-- [ ] T095 [P] Добавить CORS headers validation в src/config/cors.ts
-- [ ] T096 [P] Убедиться что все пароли НЕ логируются (проверить logger configuration)
+- [X] T095 [P] Добавить CORS headers validation в src/config/cors.ts
+- [X] T096 [P] Убедиться что все пароли НЕ логируются (проверить logger configuration)
 
 ### Performance
 
-- [ ] T097 [P] Добавить database indexes для Task.status в миграции
-- [ ] T098 [P] Проверить connection pool settings в src/config/database.ts
+- [X] T097 [P] Добавить database indexes для Task.status в миграции
+- [X] T098 [P] Проверить connection pool settings в src/config/database.ts
 
 ### Final Testing
 
-- [ ] T099 Запустить все тесты и убедиться что coverage 70%+ (npm run test:cov)
-- [ ] T100 Запустить quickstart.md validation - проверить все сценарии из quickstart.md
+- [X] T099 Запустить все тесты и убедиться что coverage 70%+ (npm run test:cov)
+- [X] T100 Запустить quickstart.md validation - проверить все сценарии из quickstart.md
 
 ---
 

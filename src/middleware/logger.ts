@@ -27,12 +27,15 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
   // Record start time for response time calculation
   req.startTime = Date.now();
 
+  const correlationId = req.headers['x-correlation-id'];
+
   // Log incoming request
   logger.info('Incoming request', {
     method: req.method,
     url: req.url,
     ip: req.ip,
     userAgent: req.get('user-agent'),
+    ...(correlationId && { correlationId }),
   });
 
   // Log response when finished
@@ -45,6 +48,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
       url: req.url,
       status: res.statusCode,
       responseTime: `${responseTime}ms`,
+      ...(correlationId && { correlationId }),
     });
   });
 
