@@ -9,14 +9,16 @@ import { jsonErrorHandler } from './middleware/json-error.middleware';
 import { requestLogger } from './middleware/logger';
 import { UserRepository } from './repositories/user.repository';
 import { ProjectRepository } from './repositories/project.repository';
-// import { BoardRepository } from './repositories/board.repository';
+import { BoardRepository } from './repositories/board.repository';
 import { UserService } from './services/user.service';
 import { AuthService } from './services/auth.service';
 import { ProjectService } from './services/project.service';
+import { BoardService } from './services/board.service';
 // import { TaskService } from './services/task.service';
 // import { LabelService } from './services/label.service';
 import { AuthController } from './controllers/auth.controller';
 import { ProjectController } from './controllers/project.controller';
+import { BoardController } from './controllers/board.controller';
 // import { TaskController } from './controllers/task.controller';
 // import { LabelController } from './controllers/label.controller';
 // import { TaskRepository } from './repositories/task.repository';
@@ -56,7 +58,7 @@ async function setupRoutes() {
   // Initialize repositories
   const userRepository = new UserRepository(AppDataSource);
   const projectRepository = new ProjectRepository(AppDataSource);
-  // const boardRepository = new BoardRepository(AppDataSource);
+  const boardRepository = new BoardRepository(AppDataSource);
   // const taskRepository = new TaskRepository(AppDataSource);
   // const labelRepository = new LabelRepository(AppDataSource);
 
@@ -68,6 +70,7 @@ async function setupRoutes() {
   });
   const authService = new AuthService(userService, jwtService);
   const projectService = new ProjectService(projectRepository, userRepository);
+  const boardService = new BoardService(boardRepository);
   // const taskService = new TaskService(taskRepository, boardRepository);
   // const labelService = new LabelService(labelRepository, projectRepository);
 
@@ -75,6 +78,7 @@ async function setupRoutes() {
   // AuthController теперь требует AuthService и DataSource
   const authController = new AuthController(authService, AppDataSource);
   const projectController = new ProjectController(projectService, AppDataSource);
+  const boardController = new BoardController(boardService, AppDataSource);
   // const taskController = new TaskController(taskService);
   // const labelController = new LabelController(labelService);
 
@@ -82,6 +86,8 @@ async function setupRoutes() {
   // Auth endpoints уже имеют rate limiter внутри контроллера
   app.use('/api/v1/auth', authController.getRouter());
   app.use('/api/v1/projects', projectController.getRouter());
+  // T057: Mount board routes
+  app.use('/api/v1/boards', boardController.getRouter());
   // app.use('/api/v1/tasks', taskController.getRouter());
   // app.use('/api/v1/labels', labelController.getRouter());
 

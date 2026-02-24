@@ -161,32 +161,32 @@
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T040 [P] [US2] Contract test для GET /boards в tests/contract/board.spec.ts
-- [ ] T041 [P] [US2] Contract test для POST /boards в tests/contract/board.spec.ts
-- [ ] T042 [P] [US2] Contract test для GET /boards/:id в tests/contract/board.spec.ts
-- [ ] T043 [P] [US2] Contract test для PATCH /boards/:id в tests/contract/board.spec.ts
-- [ ] T044 [P] [US2] Contract test для DELETE /boards/:id в tests/contract/board.spec.ts
-- [ ] T045 [P] [US2] Integration test для CRUD досок в tests/integration/board.spec.ts
-- [ ] T046 [P] [US2] Integration test для изоляции пользователей в tests/integration/board.spec.ts
-- [ ] T047 [P] [US2] Integration test для cascade delete доски с задачами в tests/integration/board.spec.ts
-- [ ] T048 [P] [US2] Integration test для лимита 100 досок на пользователя в tests/integration/board.spec.ts
-- [ ] T049 [P] [US2] Unit test для BoardService в tests/unit/board.service.spec.ts
+- [X] T040 [P] [US2] Contract test для GET /boards в tests/contract/board.spec.ts
+- [X] T041 [P] [US2] Contract test для POST /boards в tests/contract/board.spec.ts
+- [X] T042 [P] [US2] Contract test для GET /boards/:id в tests/contract/board.spec.ts
+- [X] T043 [P] [US2] Contract test для PATCH /boards/:id в tests/contract/board.spec.ts
+- [X] T044 [P] [US2] Contract test для DELETE /boards/:id в tests/contract/board.spec.ts
+- [X] T045 [P] [US2] Integration test для CRUD досок в tests/integration/board.spec.ts
+- [X] T046 [P] [US2] Integration test для изоляции пользователей в tests/integration/board.spec.ts
+- [X] T047 [P] [US2] Integration test для cascade delete доски с задачами в tests/integration/board.spec.ts
+- [X] T048 [P] [US2] Integration test для лимита 100 досок на пользователя в tests/integration/board.spec.ts
+- [X] T049 [P] [US2] Unit test для BoardService в tests/unit/board.service.spec.ts
 
 ### Implementation for User Story 2
 
 #### DTOs
 
-- [ ] T050 [P] [US2] Создать CreateBoardDto в src/dto/board/create-board.dto.ts с валидацией title (не пустой, max 255), description (nullable, max 5000)
-- [ ] T051 [P] [US2] Создать UpdateBoardDto в src/dto/board/update-board.dto.ts с опциональными полями title, description
-- [ ] T052 [P] [US2] Создать BoardResponseDto в src/dto/board/board-response.dto.ts
+- [X] T050 [P] [US2] Создать CreateBoardDto в src/dto/board/create-board.dto.ts с валидацией title (не пустой, max 255), description (nullable, max 5000)
+- [X] T051 [P] [US2] Создать UpdateBoardDto в src/dto/board/update-board.dto.ts с опциональными полями title, description
+- [X] T052 [P] [US2] Создать BoardResponseDto в src/dto/board/board-response.dto.ts
 
 #### Repository
 
-- [ ] T053 [US2] Создать BoardRepository в src/repositories/board.repository.ts extending BaseRepository с методами findByOwner, countByOwner
+- [X] T053 [US2] Создать BoardRepository в src/repositories/board.repository.ts extending BaseRepository с методами findByOwner, countByOwner
 
 #### Service
 
-- [ ] T054 [US2] Создать BoardService в src/services/board.service.ts extending BaseService с методами:
+- [X] T054 [US2] Создать BoardService в src/services/board.service.ts extending BaseService с методами:
   - create (создание доски для пользователя с проверкой лимита 100)
   - findByOwner (получение досок пользователя с пагинацией)
   - findById (получение доски с проверкой владения)
@@ -196,11 +196,11 @@
 
 #### Middleware
 
-- [ ] T055 [P] [US2] Создать validateBoardOwnership middleware в src/middleware/validate-board-ownership.ts для проверки req.user.id === board.ownerId
+- [X] T055 [P] [US2] Создать validateBoardOwnership middleware в src/middleware/validate-board-ownership.ts для проверки req.user.id === board.ownerId
 
 #### Controller
 
-- [ ] T056 [US2] Создать BoardController в src/controllers/board.controller.ts extending BaseController с эндпоинтами:
+- [X] T056 [US2] Создать BoardController в src/controllers/board.controller.ts extending BaseController с эндпоинтами:
   - GET /boards (список досок пользователя с пагинацией)
   - POST /boards (создание доски)
   - GET /boards/:id (получение доски)
@@ -209,12 +209,12 @@
 
 #### Routes
 
-- [ ] T057 [US2] Зарегистрировать board routes в src/main.ts с authenticate и validateBoardOwnership middleware
+- [X] T057 [US2] Зарегистрировать board routes в src/main.ts с authenticate и validateBoardOwnership middleware
 
 #### Swagger Documentation
 
-- [ ] T058 [US2] Добавить Swagger декораторы в BoardController (зависит от T056)
-- [ ] T059 [US2] Добавить @ApiProperty() декораторы во все Board DTOs (зависит от T050-T052)
+- [X] T058 [US2] Добавить Swagger декораторы в BoardController (зависит от T056)
+- [X] T059 [US2] Добавить @ApiProperty() декораторы во все Board DTOs (зависит от T050-T052)
 
 **Checkpoint**: User Stories 1 И 2 работают независимо. Пользователи могут аутентифицироваться и управлять своими досками с полной изоляцией данных.
 

@@ -25,7 +25,22 @@ export class BoardRepository extends BaseRepository<Board> {
     const { page, pageSize } = options || {};
 
     if (page && pageSize) {
-      return this.findAll({ page, pageSize });
+      const skip = (page - 1) * pageSize;
+
+      const [data, total] = await this.repository.findAndCount({
+        where,
+        skip,
+        take: pageSize,
+        cache: false,
+      });
+
+      return {
+        data,
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize),
+      };
     }
 
     const data = await this.findMany(where);
